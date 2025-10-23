@@ -1,0 +1,20 @@
+# Git
+.git
+.gitignore
+
+# Docker
+.dockerignore
+Dockerfile
+
+.venv
+venv
+*.pyc
+
+# Django
+__pycache__/
+db.sqlite3
+/media/
+/static/
+
+# File tạm
+*.log
