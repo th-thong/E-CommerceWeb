@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShopLiteX</title>
+  <link rel="icon" type="image/png" href="hien2.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <!-- Keep your original CSS file -->
+  <link href="templatemo-electric-xtra.css" rel="stylesheet"/>
+  <style>
+    /* --- Minimal add-ons (non-conflicting) --- */
+    :root{--c1:#00b2ff;--c2:#ff5e00;--bg:#0b0f16;--card:#111826;--muted:#8aa0b1}
+    .container{max-width:1200px;margin:0 auto;padding:0 20px}
+    .section-title{font-family:Orbitron,system-ui,sans-serif;letter-spacing:.08em}
+    /* Shop grid */
+    .shop{padding:100px 0 60px}
+    .shop-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:24px}
+    .shop-tools{display:flex;gap:12px;flex-wrap:wrap}
+    .input, .select{background:#0e1522;border:1px solid #1e2533;color:#cfe6ff;padding:10px 12px;border-radius:10px}
+    .product-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    @media(max-width:1024px){.product-grid{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:768px){.product-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:480px){.product-grid{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid #1d2433;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .card-media{aspect-ratio:4/3;background:#0b1220;display:block;width:100%;object-fit:cover}
+    .card-body{padding:14px}
+    .card-title{font-family:Rajdhani,system-ui,sans-serif;font-weight:700;font-size:1.05rem;margin:0 0 6px}
+    .price{color:#e8f6ff;font-weight:700}
+    .desc{color:var(--muted);font-size:.9rem}
+    .btn{cursor:pointer;border:1px solid #283247;background:linear-gradient(180deg,#172033,#0f1523);color:#e6f3ff;border-radius:12px;padding:10px 12px;transition:transform .08s ease, box-shadow .2s ease}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,178,255,.25)}
+    .btn-primary{border-color:var(--c1)}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,178,255,.1);border:1px solid rgba(0,178,255,.35);color:#bfe9ff;border-radius:999px;padding:6px 10px;font-size:.85rem}
+    /* Cart drawer */
+    .cart-toggle{position:relative}
+    .cart-count{position:absolute;top:-8px;right:-8px;min-width:20px;height:20px;background:var(--c2);color:#fff;font-size:.75rem;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 6px}
+    .drawer{position:fixed;inset:0 0 0 auto;width:min(420px,100%);background:#0c1321;border-left:1px solid #1e2533;transform:translateX(100%);transition:transform .25s ease;z-index:9999;display:flex;flex-direction:column}
+    .drawer.open{transform:translateX(0)}
+    .drawer-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #1e2533}
+    .drawer-body{padding:10px 0;overflow:auto;flex:1}
+    .cart-item{display:grid;grid-template-columns:64px 1fr auto;gap:10px;padding:12px 16px;border-bottom:1px solid #1a2130}
+    .cart-item img{width:64px;height:64px;object-fit:cover;border-radius:10px}
+    .qty{display:flex;align-items:center;gap:8px}
+    .qty button{width:26px;height:26px;border-radius:8px}
+    .drawer-footer{padding:16px;border-top:1px solid #1e2533}
+    .total{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    /* Simple auth modal */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:9998}
+    .modal.open{display:flex}
+    .modal-card{width:min(420px,92vw);background:#0c1321;border:1px solid #20283a;border-radius:18px;padding:20px}
+    .modal h3{margin:0 0 10px}
+  </style>
+</head>
+<body>
+  <!-- Animated Background from template -->
+  <div class="grid-bg"></div>
+  <div class="gradient-overlay"></div>
+  <div class="scanlines"></div>
+
+  <!-- Animated Shapes -->
+  <div class="shapes-container">
+    <div class="shape shape-circle"></div>
+    <div class="shape shape-triangle"></div>
+    <div class="shape shape-square"></div>
+  </div>
+
+  <!-- Floating Particles -->
+  <div id="particles"></div>
+
+  <!-- Navbar -->
+  <nav id="navbar">
+    <div class="nav-container container">
+      <a href="#home" class="logo-link">
+        <span class="logo-text">ShopLiteX</span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home" class="nav-link">Home</a></li>
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#shop" class="nav-link">Shop</a></li>
+        <li><a href="#about" class="nav-link">About</a></li>
+        <li><a href="#contact" class="nav-link">Contact</a></li>
+      </ul>
+      <div class="nav-actions" style="display:flex;gap:10px;align-items:center">
+        <button id="loginBtn" class="btn">Log in</button>
+        <button id="cartBtn" class="btn cart-toggle">🛒 Cart <span id="cartCount" class="cart-count">0</span></button>
+        <div class="menu-toggle" id="menuToggle"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section (giữ 3 chữ xoay như template gốc) -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <div class="text-rotator">
+  <div class="text-set active">
+    <h1 class="glitch-text" data-text="LEVEL UP YOUR SETUP">LEVEL UP YOUR SETUP</h1>
+    <p class="subtitle">Pro-grade gear for your ultimate workstation</p>
+  </div>
+  <div class="text-set">
+    <h1 class="glitch-text" data-text="LIMITED-TIME DEALS">LIMITED-TIME DEALS</h1>
+    <p class="subtitle">Save big on keyboards, headsets & accessories</p>
+  </div>
+  <div class="text-set">
+    <h1 class="glitch-text" data-text="FREE SHIPPING 99+">FREE SHIPPING 99+</h1>
+    <p class="subtitle">Fast delivery, secure checkout, easy returns</p>
+  </div>
+</div>
+    </div>
+    <div class="cta-container">
+      <a href="#shop" class="cta-button cta-primary">Browse Products</a>
+    </div>
+  </section>
+
+  <!-- SHOP SECTION -->
+  <section class="shop" id="shop">
+    <div class="container">
+      <h2 class="section-title">Shop</h2>
+      <div class="shop-header">
+        <div class="badge">⚡ Free shipping over $99</div>
+        <div class="shop-tools">
+          <input id="searchBox" class="input" placeholder="Search products..." />
+          <select id="categorySelect" class="select">
+            <option value="all">All categories</option>
+            <option value="hardware">Hardware</option>
+            <option value="accessory">Accessory</option>
+            <option value="apparel">Apparel</option>
+          </select>
+          <select id="sortSelect" class="select">
+            <option value="featured">Featured</option>
+            <option value="price-asc">Price: Low → High</option>
+            <option value="price-desc">Price: High → Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="productGrid" class="product-grid"></div>
+    </div>
+  </section>
+
+  <!-- CART DRAWER -->
+  <aside id="cartDrawer" class="drawer" aria-hidden="true">
+    <div class="drawer-header">
+      <strong>🛒 Your Cart</strong>
+      <button id="closeCart" class="btn">Close</button>
+    </div>
+    <div id="cartBody" class="drawer-body"></div>
+    <div class="drawer-footer">
+      <div class="total"><span>Total</span><strong id="cartTotal">$0.00</strong></div>
+      <div style="display:flex;gap:10px">
+        <button id="clearCart" class="btn">Clear</button>
+        <button id="checkoutBtn" class="btn btn-primary">Checkout</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- SIMPLE AUTH MODAL -->
+  <div id="authModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="modal-card">
+      <h3 id="authTitle">Welcome back</h3>
+      <div style="display:grid;gap:10px">
+        <input class="input" type="email" placeholder="Email"/>
+        <input class="input" type="password" placeholder="Password"/>
+        <button class="btn btn-primary" id="authSubmit">Log in</button>
+        <button class="btn" id="authClose">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Original scripts to keep effects (particles, smooth scroll, rotator...) -->
+  <script src="templatemo-electric-scripts.js"></script>
+
+  <!-- Fallback rotator: đảm bảo 3 chữ xoay ngay cả khi script gốc không khởi tạo -->
+  <script>
+  (function () {
+    const sets = document.querySelectorAll('.text-rotator .text-set');
+    if (!sets.length) return;
+
+    // Nếu file gốc đã đăng ký rotateText thì thoát để tránh chạy trùng
+    if (typeof window.rotateText === 'function') return;
+
+    let current = 0;
+    sets.forEach((el, i) => el.classList.toggle('active', i === 0));
+
+    function syncDataText(el) {
+      const h1 = el.querySelector('.glitch-text');
+      if (h1) h1.setAttribute('data-text', h1.textContent);
+    }
+    syncDataText(sets[0]);
+
+    setInterval(() => {
+      sets[current].classList.remove('active');
+      current = (current + 1) % sets.length;
+      sets[current].classList.add('active');
+      syncDataText(sets[current]);
+    }, 5000);
+  })();
+  </script>
+
+  <script>
+    // --- Minimal shop logic ---
+    const products = [
+      {id:1, name:"Neon Keyboard", price:79, category:"hardware", img:"https://picsum.photos/seed/keyboard/600/400", desc:"Hotswap, per-key RGB."},
+      {id:2, name:"Holo Mouse", price:49, category:"hardware", img:"https://picsum.photos/seed/mouse/600/400", desc:"8K polling, low-latency."},
+      {id:3, name:"Quantum Tee", price:29, category:"apparel", img:"https://picsum.photos/seed/shirt/600/400", desc:"100% cotton, glow print."},
+      {id:4, name:"Cyber Cap", price:24, category:"apparel", img:"https://picsum.photos/seed/cap/600/400", desc:"Snapback, reflective logo."},
+      {id:5, name:"Flux Cable", price:12, category:"accessory", img:"https://picsum.photos/seed/cable/600/400", desc:"USB-C 240W, braided."},
+      {id:6, name:"Photon Pad", price:35, category:"accessory", img:"https://picsum.photos/seed/pad/600/400", desc:"XL, RGB edges."},
+      {id:7, name:"Aurora Headset", price:119, category:"hardware", img:"https://picsum.photos/seed/headset/600/400", desc:"7.1 surround, ANC."},
+      {id:8, name:"Vector Hoodie", price:59, category:"apparel", img:"https://picsum.photos/seed/hoodie/600/400", desc:"Fleece-lined, cyber trim."}
+    ];
+
+    const state = {
+      items: JSON.parse(localStorage.getItem('ex_cart')||'[]'),
+      filter:{q:'', cat:'all', sort:'featured'}
+    };
+
+    const grid = document.getElementById('productGrid');
+    const countEl = document.getElementById('cartCount');
+    const cartDrawer = document.getElementById('cartDrawer');
+    const cartBody = document.getElementById('cartBody');
+    const cartTotal = document.getElementById('cartTotal');
+
+    function renderProducts(){
+      let list = products.slice();
+      const q = state.filter.q.toLowerCase();
+      if(q) list = list.filter(p=> (p.name+p.desc).toLowerCase().includes(q));
+      if(state.filter.cat !== 'all') list = list.filter(p=> p.category===state.filter.cat);
+      if(state.filter.sort==='price-asc') list.sort((a,b)=>a.price-b.price);
+      if(state.filter.sort==='price-desc') list.sort((a,b)=>b.price-a.price);
+      // Build cards
+      grid.innerHTML = list.map(p=>`
+        <article class="card">
+          <img class="card-media" src="${p.img}" alt="${p.name}" loading="lazy"/>
+          <div class="card-body">
+            <h3 class="card-title">${p.name}</h3>
+            <p class="desc">${p.desc}</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+              <span class="price">$${p.price.toFixed(2)}</span>
+              <button class="btn btn-primary" onclick="addToCart(${p.id})">Add to cart</button>
+            </div>
+          </div>
+        </article>`).join('');
+    }
+
+    function saveCart(){ localStorage.setItem('ex_cart', JSON.stringify(state.items)); }
+
+    function addToCart(id){
+      const idx = state.items.findIndex(i=>i.id===id);
+      if(idx>-1){ state.items[idx].qty++; }
+      else{ const p=products.find(p=>p.id===id); state.items.push({id:p.id,name:p.name,price:p.price,img:p.img,qty:1}); }
+      saveCart();
+      renderCart();
+      openCart();
+    }
+
+    function changeQty(id,delta){
+      const it = state.items.find(i=>i.id===id); if(!it) return;
+      it.qty += delta; if(it.qty<=0){ state.items = state.items.filter(i=>i.id!==id); }
+      saveCart(); renderCart();
+    }
+
+    function renderCart(){
+      countEl.textContent = state.items.reduce((s,i)=>s+i.qty,0);
+      cartBody.innerHTML = state.items.length? state.items.map(i=>`
+        <div class="cart-item">
+          <img src="${i.img}" alt="${i.name}"/>
+          <div>
+            <div style="font-weight:700;margin-bottom:4px">${i.name}</div>
+            <div class="qty">
+              <button class="btn" onclick="changeQty(${i.id},-1)">−</button>
+              <span>${i.qty}</span>
+              <button class="btn" onclick="changeQty(${i.id},1)">+</button>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div>$${(i.price*i.qty).toFixed(2)}</div>
+          </div>
+        </div>`).join('') : '<div style="padding:18px;color:#a8bed0">Your cart is empty.</div>';
+      const total = state.items.reduce((s,i)=>s+i.price*i.qty,0);
+      cartTotal.textContent = `$${total.toFixed(2)}`;
+    }
+
+    function openCart(){ cartDrawer.classList.add('open'); cartDrawer.setAttribute('aria-hidden','false'); }
+    function closeCart(){ cartDrawer.classList.remove('open'); cartDrawer.setAttribute('aria-hidden','true'); }
+
+    // Events
+    document.getElementById('cartBtn').addEventListener('click', openCart);
+    document.getElementById('closeCart').addEventListener('click', closeCart);
+    document.getElementById('clearCart').addEventListener('click', ()=>{ state.items=[]; saveCart(); renderCart(); });
+    document.getElementById('checkoutBtn').addEventListener('click', ()=>{
+      alert('Demo checkout. Hook this button to your payment flow (VNPay/Stripe/PayPal).');
+    });
+
+    // Filters
+    document.getElementById('searchBox').addEventListener('input', e=>{ state.filter.q=e.target.value; renderProducts(); });
+    document.getElementById('categorySelect').addEventListener('change', e=>{ state.filter.cat=e.target.value; renderProducts(); });
+    document.getElementById('sortSelect').addEventListener('change', e=>{ state.filter.sort=e.target.value; renderProducts(); });
+
+    // Auth modal
+    const authModal = document.getElementById('authModal');
+    document.getElementById('loginBtn').addEventListener('click', ()=> authModal.classList.add('open'));
+    document.getElementById('authClose').addEventListener('click', ()=> authModal.classList.remove('open'));
+    document.getElementById('authSubmit').addEventListener('click', ()=>{
+      authModal.classList.remove('open');
+      alert('Logged in (demo). Replace this with real auth.');
+    });
+
+    // Init
+    renderProducts();
+    renderCart();
+  </script>
+</body>
+</html>
