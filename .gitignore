@@ -1,5 +1,14 @@
+# Bí mật
 *.env
+
+# File tạm
 temp
 *.log
 __pycache__
+
+# Môi trường
+venv
+.venv
+
+# Floder riêng
 thong_note
