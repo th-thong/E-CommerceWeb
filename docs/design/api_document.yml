@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: ShopLieX API
+  title: ShopLiteX API
   description: |-
     Tài liệu API cho ShopLieX
     Hỗ trợ 3 vai trò:
