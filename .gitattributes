@@ -1,0 +1,7 @@
+# Thiết lập tất cả các tệp văn bản tự động sử dụng chuẩn LF
+* text=auto eol=lf
+
+# Những file không phải text (ảnh, file nén...) thì không can thiệp
+*.jpg binary
+*.png binary
+*.zip binary
