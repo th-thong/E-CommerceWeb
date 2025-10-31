@@ -9,7 +9,7 @@ info:
     - **Admin**: Quản trị viên
   version: 1.0.0
 servers:
-  - url: http://127.0.0.1/api/
+  - url: http://127.0.0.1:8000/api/
     description: Dev server
 tags:
   - name: Auth
@@ -23,11 +23,13 @@ tags:
   - name: Categories
     description: Quản lý và duyệt danh mục
   - name: Orders
-    description: Quản lý đơn hàng (Bills & BillDetail)
+    description: Quản lý đơn hàng (Bills & BillDetail)swagg
   - name: Feedback
     description: Quản lý đánh giá sản phẩm
   - name: Admin
     description: Chức năng quản trị của Admin
+  - name: Payment
+    description: Xử lý thanh toán
     
 paths:
   /auth/register:
@@ -553,6 +555,8 @@ paths:
       responses:
         '204':
           description: Xóa thành công
+
+
 components:
   schemas:
     User:

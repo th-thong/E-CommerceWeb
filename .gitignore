@@ -9,6 +9,10 @@ __pycache__
 # Môi trường
 venv
 .venv
+.secrets
 
 # Floder riêng
 thong_note
+
+# test workflow
+act.exe
