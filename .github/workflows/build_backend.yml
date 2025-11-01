@@ -9,9 +9,7 @@ jobs:
     name: Build Backend
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: write
+    permissions: write-all
 
     steps:
       - name: Checkout repository
