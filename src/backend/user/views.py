@@ -15,3 +15,19 @@ def get_user_profile(request):
     user=request.user
     user=UserSeriallizer(user)
     return Response(user.data)
+
+
+
+@api_view(['PUT'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+@renderer_classes([JSONRenderer])
+def change_user_profile(request):
+    user=request.user
+    
+    for key,value in request.data.items():
+        if key != 'id':
+            setattr(user,key,value)
+    user.save()
+    user=UserSeriallizer(user)
+    return Response(user.data)
