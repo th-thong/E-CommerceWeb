@@ -4,7 +4,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.renderers import JSONRenderer
 from http.client import HTTPResponse
 from rest_framework.response import Response
-from .serializers import UserSeriallizer
+from .serializers import ShopSerializer
 
 
 # !!!!!!!!!!!!! Chưa áp dụng phân quyền user !!!!!!!!!!!!!!!!!!!!1
@@ -14,6 +14,6 @@ from .serializers import UserSeriallizer
 @renderer_classes([JSONRenderer])
 def get_shop_info(request):
     shop=request.user.shop
-    shop=UserSeriallizer(shop)
+    shop=ShopSerializer(shop)
     return Response(shop.data)
 
