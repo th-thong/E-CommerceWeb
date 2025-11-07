@@ -56,3 +56,24 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
     
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'role': self.role,
+            'email': self.email,
+            'status': self.status,
+        }
+
+    def find_by_email(email):
+        data = User.objects.filter(email=email)
+        if data.exists():
+            return data.first()
+        return None
+    
+    def find_by_username(username):
+        data = User.objects.filter(username=username)
+        if data.exists():
+            return data.first()
+        return None
+    
