@@ -5,12 +5,12 @@ from rest_framework.renderers import JSONRenderer
 from http.client import HTTPResponse
 from rest_framework.response import Response
 from .serializers import ShopSerializer
+from .permissions import IsOwner
 
 
-# !!!!!!!!!!!!! Chưa áp dụng phân quyền user !!!!!!!!!!!!!!!!!!!!1
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsOwner])
 @renderer_classes([JSONRenderer])
 def get_shop_info(request):
     shop=request.user.shop
