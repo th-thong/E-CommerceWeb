@@ -4,6 +4,12 @@ from django.conf import settings
 class Feedback(models.Model):
     rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
     review = models.TextField()
+    
+    STATUS_CHOICES = (
+        ('banned', 'Banned'),
+        ('normal', 'Normal'), 
+    )
+    status = models.CharField(max_length=7, choices=STATUS_CHOICES, default='active')
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE,

@@ -3,7 +3,7 @@ from django.db import models
 from django.conf import settings
 
 class Order(models.Model):
-    # Một Order là một lần mua hàng
+    # Một Order là một lần mua hàng (gồm nhiều order detail)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

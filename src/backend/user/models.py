@@ -13,7 +13,6 @@ class User(AbstractUser):
         ('seller', 'Seller'),
         ('buyer', 'Buyer'),
     )
-    role = models.CharField(max_length=6, choices=ROLE_CHOICES, default='buyer')
 
     STATUS_CHOICES = (
         ('active', 'Active'),
@@ -24,6 +23,8 @@ class User(AbstractUser):
 
     
     email = models.EmailField(unique=True)
+    address = models.TextField(default="None")
+    
 
     # username là mặc định có trong class AbstractUser nên không cần thêm
 

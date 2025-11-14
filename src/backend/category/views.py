@@ -4,7 +4,6 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.renderers import JSONRenderer
 from http.client import HTTPResponse
 from rest_framework.response import Response
-from .serializers import UserSeriallizer
 from .models import Category
 from .serializers import CategorySeriallizer
 

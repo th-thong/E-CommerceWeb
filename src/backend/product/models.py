@@ -5,6 +5,8 @@ class Product(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.IntegerField()
+    discount = models.IntegerField(default=0)
+    img_path= models.FilePathField()
     
     shop = models.ForeignKey(
         'shop.Shop', 
