@@ -6,9 +6,12 @@
 .dockerignore
 Dockerfile
 
+# Môi trường
 .venv
 venv
 *.pyc
+.env
+.secret
 
 # Django
 __pycache__/
@@ -18,3 +21,11 @@ db.sqlite3
 
 # File tạm
 *.log
+act.exe
+thong_note
+frontend
+test.py
+migrations
+db.sqlite3
+README.md
+docs
