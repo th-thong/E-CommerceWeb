@@ -47,8 +47,16 @@ INSTALLED_APPS = [
     'order',
     'shop',
     'feedback',
-    'rest_framework'
+    'rest_framework',
+    'drf_spectacular'
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+
+AUTH_USER_MODEL = 'user.User' # Quy định class User chung cho toàn dự án
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

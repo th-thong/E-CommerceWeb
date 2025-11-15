@@ -14,6 +14,6 @@ from .permissions import IsOwner
 @renderer_classes([JSONRenderer])
 def get_shop_info(request):
     shop=request.user.shop
-    shop=ShopSerializer(shop)
-    return Response(shop.data)
+    serializer=ShopSerializer(shop)
+    return Response(serializer.data)
 

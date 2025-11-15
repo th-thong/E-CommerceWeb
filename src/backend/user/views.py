@@ -5,64 +5,47 @@ from rest_framework.renderers import JSONRenderer
 from http.client import HTTPResponse
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import UserSerializer
-from .models import User
+from .serializers import UserSerializer, UserRegisterSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from drf_spectacular.utils import extend_schema
 
 
-@api_view(['GET'])
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+@api_view(['GET', 'PUT'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 @renderer_classes([JSONRenderer])
-def get_user_profile(request):
-    user=request.user
-    user=UserSerializer(user)
-    return Response(user.data)
-
-
-@api_view(['PUT'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-@renderer_classes([JSONRenderer])
-def change_user_profile(request):
+def user_profile_view(request):
     user = request.user
-    serializer = UserSerializer(user, data=request.data, partial=True)
+    
+    if request.method == 'GET':
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
         
-    if serializer.is_valid() :
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-        
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'PUT':
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
+@extend_schema(
+    request=UserRegisterSerializer, 
+    responses={201: None} 
+)
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
 def register(request):
-    data=request.data
-    username = data.get('user_name')
-    email = data.get('email')
-    password = data.get('password')
-    role = data.get('role')
-
-    if not email or not password or not username:
-        return Response({"message" : "Đã có lỗi xảy ra"}, status = 401)
-
-    if User.find_by_username(username):
-        return Response({"message": "Đã có lỗi xảy ra"})
+    serializer = UserRegisterSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-    if User.find_by_email(email):
-        return Response({"message" : "Đã có lỗi xảy ra"})
-    
-    user = User(username = username, email=email)
-    
-    user.set_password(password)
-    if role != None:
-        user.role = role
-        
-    user.save()
-    return Response({}, status=201)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
@@ -72,14 +55,14 @@ def login(request):
     password = data.get('password')
 
     if not email or not password:
-        return Response({"message" : "Đã có lỗi xảy ra"}, status = 401)
+        return Response({"message" : "Email và mật khẩu là bắt buộc"}, status = 400)
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
         user = None
 
     if user is None or not user.check_password(password):
-        return Response({"message" : "Đã có lỗi xảy ra"}, status = 401)
+        return Response({"message" : "Email hoặc mật khẩu không chính xác"}, status = 401)
     
     refresh = RefreshToken.for_user(user)
     access_token = str(refresh.access_token)

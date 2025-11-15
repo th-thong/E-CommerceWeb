@@ -1,11 +1,13 @@
 from django.db import models
-from django.conf import settings # Import settings để lấy AUTH_USER_MODEL
+from django.conf import settings
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 class Shop(models.Model):
     shop_name = models.CharField(max_length=45)
     
     owner = models.OneToOneField(
-        settings.AUTH_USER_MODEL, 
+        User, 
         on_delete=models.CASCADE,
         related_name='shop'
     )
