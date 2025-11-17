@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'shop',
     'feedback',
     'rest_framework',
-    'drf_spectacular'
+    'drf_spectacular',
+    'django_extensions',
 ]
 
 REST_FRAMEWORK = {

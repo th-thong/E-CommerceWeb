@@ -3,7 +3,12 @@ name: Build and Push Backend Docker Image
 on:
   push:
     branches: ["master"]
-
+    paths: 
+    - 'src/backend/**'
+  pull_request:
+    branches: ["master"]
+    paths: 
+    - 'src/backend/**'
 jobs:
   build-and-push:
     name: Build Backend
