@@ -30,7 +30,8 @@ class ProductImage(models.Model):
         related_name='images'
     )
     
-    image_file = models.ImageField(upload_to=rename_product_image)
+    image_url = models.URLField(max_length=500, default="") 
+    file_id = models.CharField(max_length=255, blank=True, null=True)
     
     def __str__(self):
         return f"Image for {self.product.product_name}"

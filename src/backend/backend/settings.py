@@ -93,9 +93,9 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-is_production=os.environ.get('IS_PRODUCTION')
+is_use_cloud_database=os.environ.get('USE_CLOUD_DATABASE')
 
-if is_production=='TRUE':
+if is_use_cloud_database=='TRUE':
 
     DATABASES = {
         'default': dj_database_url.config(
@@ -160,4 +160,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-MEDIA_ROOT='media'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+IMAGEKIT_PRIVATE_KEY = os.environ.get('IMAGEKIT_PRIVATE_KEY')
+IMAGEKIT_PUBLIC_KEY = os.environ.get('IMAGEKIT_PUBLIC_KEY')
+IMAGEKIT_URL_ENDPOINT = os.environ.get('IMAGEKIT_URL_ENDPOINT')
+
+USE_CLOUD_STORAGE=os.environ.get('USE_CLOUD_STORAGE')
