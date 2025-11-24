@@ -12,7 +12,7 @@ from drf_spectacular.utils import extend_schema_view, extend_schema
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
 from .models import Product
-
+from rest_framework.parsers import MultiPartParser, FormParser
 
 ProductNotExistedResponse={"error":"Product with this id is not existed"}
 
@@ -56,6 +56,7 @@ class PrivateProduct(APIView):
     renderer_classes=[JSONRenderer]
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
     
     def get(self,request, product_id):
         try:
