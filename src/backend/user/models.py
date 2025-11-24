@@ -8,12 +8,6 @@ from django.utils.translation import gettext_lazy as _
 class User(AbstractUser):
     # Model User là kế thừa từ class AbstractUser có sẵn của Django
 
-    ROLE_CHOICES = (
-        ('admin', 'Admin'),
-        ('seller', 'Seller'),
-        ('buyer', 'Buyer'),
-    )
-
     STATUS_CHOICES = (
         ('active', 'Active'),
         ('banned', 'Banned'),

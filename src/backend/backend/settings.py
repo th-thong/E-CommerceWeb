@@ -95,7 +95,6 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 is_production=os.environ.get('IS_PRODUCTION')
 
-
 if is_production=='TRUE':
 
     DATABASES = {
@@ -105,6 +104,9 @@ if is_production=='TRUE':
             ssl_require=True 
         )
     }
+    
+
+
 else:
 
     DATABASES = {
@@ -158,3 +160,4 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+MEDIA_ROOT='media'
