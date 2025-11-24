@@ -1,12 +1,12 @@
 from django.db import models
+from .utils import rename_product_image
 
 class Product(models.Model):
-    product_name = models.CharField(max_length=45)
+    product_name = models.CharField(max_length=250)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.IntegerField()
     discount = models.IntegerField(default=0)
-    img_path= models.FilePathField(default="None")
     
     shop = models.ForeignKey(
         'shop.Shop', 
@@ -21,3 +21,16 @@ class Product(models.Model):
 
     def __str__(self):
         return self.product_name
+    
+    
+class ProductImage(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
+    
+    image_file = models.ImageField(upload_to=rename_product_image)
+    
+    def __str__(self):
+        return f"Image for {self.product.product_name}"
