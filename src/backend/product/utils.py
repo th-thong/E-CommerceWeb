@@ -14,29 +14,20 @@ def rename_product_image(filename):
 
     return new_filename
 
-imagekit = ImageKit(
-    private_key=settings.IMAGEKIT_PRIVATE_KEY,
-    public_key=settings.IMAGEKIT_PUBLIC_KEY,
-    url_endpoint=settings.IMAGEKIT_URL_ENDPOINT
-)
 
-imagekit = ImageKit(
-    private_key=settings.IMAGEKIT_PRIVATE_KEY,
-    public_key=settings.IMAGEKIT_PUBLIC_KEY,
-    url_endpoint=settings.IMAGEKIT_URL_ENDPOINT
-)
 
-imagekit = ImageKit(
-    private_key=settings.IMAGEKIT_PRIVATE_KEY,
-    public_key=settings.IMAGEKIT_PUBLIC_KEY,
-    url_endpoint=settings.IMAGEKIT_URL_ENDPOINT
-)
 
 def upload_image(file_obj, file_name):
     # --- TRƯỜNG HỢP 1: LƯU LÊN CLOUD (IMAGEKIT) ---
     if settings.USE_CLOUD_STORAGE=='TRUE':
         try:
 
+            imagekit = ImageKit(
+                private_key=settings.IMAGEKIT_PRIVATE_KEY,
+                public_key=settings.IMAGEKIT_PUBLIC_KEY,
+                url_endpoint=settings.IMAGEKIT_URL_ENDPOINT
+            )
+            
             if hasattr(file_obj, 'seek'): file_obj.seek(0)
             file_content = file_obj.read()
             file_base64 = base64.b64encode(file_content).decode('utf-8')
