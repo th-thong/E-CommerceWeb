@@ -1,7 +1,7 @@
 # Hướng dẫn sử dụng
 
 ## 1. Các endpoint api
-- Các endpoint api trong tài liệu api ở http://127.0.0.1/api/docs/
+- Các endpoint api trong tài liệu api ở http://127.0.0.1:8000/api/docs/
 
 ## 2. Cách chạy thử
 
@@ -11,7 +11,7 @@
 2. Đăng nhập docker ```docker login ghcr.io```
 3. Nhập user name, PAT lấy từ github
 4. Pull về bằng lệnh ```docker pull ghcr.io/thong000/shoplitex-backend:latest```
-5. Từ thư mục chín chạy lệnh ```docker run -d -p 8000:8000 --env-file src/backend/.env ghcr.io/thong000/shoplitex-backend:latest```
+5. Từ thư mục chính chạy lệnh ```docker run -d -p 8000:8000 --env-file src/backend/.env ghcr.io/thong000/shoplitex-backend:latest```
 
 
 ### Cách 2: File requirements.txt
