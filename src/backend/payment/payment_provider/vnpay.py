@@ -1,61 +1,65 @@
 import hashlib
 import hmac
 import urllib.parse
+from django import forms
 
-class VNPAY:
-    def __init__(self):
-        self.request_data = {}
-        self.response_data = {}
 
-    def add_request_data(self, key, value):
-        if value is not None:
-            self.request_data[key] = str(value)
+class PaymentForm(forms.Form):
+
+    order_id = forms.CharField(max_length=250)
+    order_type = forms.CharField(max_length=20)
+    amount = forms.IntegerField()
+    order_desc = forms.CharField(max_length=100)
+    bank_code = forms.CharField(max_length=20, required=False)
+    language = forms.CharField(max_length=2)
+
+class vnpay:
+    requestData = {}
+    responseData = {}
 
     def get_payment_url(self, vnpay_payment_url, secret_key):
-        # Sắp xếp tham số theo a-z
-        input_data = sorted(self.request_data.items())
-        
-        # Tạo query string
-        query_string = ''
+        inputData = sorted(self.requestData.items())
+        queryString = ''
+        hasData = ''
         seq = 0
-        for key, val in input_data:
+        for key, val in inputData:
             if seq == 1:
-                query_string = query_string + "&" + key + "=" + urllib.parse.quote_plus(val)
+                queryString = queryString + "&" + key + '=' + urllib.parse.quote_plus(str(val))
             else:
-                query_string = key + "=" + urllib.parse.quote_plus(val)
                 seq = 1
+                queryString = key + '=' + urllib.parse.quote_plus(str(val))
 
-        # Tạo chữ ký bảo mật (HMAC SHA512)
-        hash_value = self.__hmacsha512(secret_key, query_string)
-        
-        # Trả về URL hoàn chỉnh
-        return vnpay_payment_url + "?" + query_string + "&vnp_SecureHash=" + hash_value
+        hashValue = self.__hmacsha512(secret_key, queryString)
+        return vnpay_payment_url + "?" + queryString + '&vnp_SecureHash=' + hashValue
 
     def validate_response(self, secret_key):
-        vnp_SecureHash = self.response_data.get('vnp_SecureHash')
-        
-        if 'vnp_SecureHash' in self.response_data:
-            self.response_data.pop('vnp_SecureHash')
-            
-        if 'vnp_SecureHashType' in self.response_data:
-            self.response_data.pop('vnp_SecureHashType')
+        vnp_SecureHash = self.responseData['vnp_SecureHash']
+        # Remove hash params
+        if 'vnp_SecureHash' in self.responseData.keys():
+            self.responseData.pop('vnp_SecureHash')
 
-        input_data = sorted(self.response_data.items())
-        
-        query_string = ''
+        if 'vnp_SecureHashType' in self.responseData.keys():
+            self.responseData.pop('vnp_SecureHashType')
+
+        inputData = sorted(self.responseData.items())
+        hasData = ''
         seq = 0
-        for key, val in input_data:
-            if seq == 1:
-                query_string = query_string + "&" + key + "=" + urllib.parse.quote_plus(val)
-            else:
-                query_string = key + "=" + urllib.parse.quote_plus(val)
-                seq = 1
-        
-        hash_value = self.__hmacsha512(secret_key, query_string)
-        
-        return vnp_SecureHash == hash_value
+        for key, val in inputData:
+            if str(key).startswith('vnp_'):
+                if seq == 1:
+                    hasData = hasData + "&" + str(key) + '=' + urllib.parse.quote_plus(str(val))
+                else:
+                    seq = 1
+                    hasData = str(key) + '=' + urllib.parse.quote_plus(str(val))
+        hashValue = self.__hmacsha512(secret_key, hasData)
 
-    def __hmacsha512(self, key, data):
+        print(
+            'Validate debug, HashData:' + hasData + "\n HashValue:" + hashValue + "\nInputHash:" + vnp_SecureHash)
+
+        return vnp_SecureHash == hashValue
+
+    @staticmethod
+    def __hmacsha512(key, data):
         byteKey = key.encode('utf-8')
         byteData = data.encode('utf-8')
         return hmac.new(byteKey, byteData, hashlib.sha512).hexdigest()
