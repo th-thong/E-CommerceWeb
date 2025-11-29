@@ -7,12 +7,5 @@ class CreatePaymentSerializer(serializers.Serializer):
     language = serializers.CharField(required=False, default='vn', help_text="Ngôn ngữ (vn/en)")
     order_id = serializers.CharField(required=False, help_text="Mã đơn hàng unique")
 
-"""class RefundSerializer(serializers.Serializer):
-    order_id = serializers.CharField(help_text="Mã đơn hàng cần hoàn tiền (vnp_TxnRef)")
-    amount = serializers.IntegerField(help_text="Số tiền hoàn")
-    trans_date = serializers.CharField(help_text="Ngày giao dịch (YYYYMMDDHHmmss)")
-    order_desc = serializers.CharField(help_text="Lý do hoàn tiền")
-    transaction_type = serializers.ChoiceField(
-        choices=[('02', 'Hoàn tiền toàn phần'), ('03', 'Hoàn tiền một phần')],
-        default='02'
-    )"""
+class CODSerializers(serializers.Serializer):
+    order_id = serializers.CharField(required=False, help_text="Mã đơn hàng unique")

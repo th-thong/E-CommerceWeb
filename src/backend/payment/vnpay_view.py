@@ -9,10 +9,14 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema
 from .payment_provider.vnpay import vnpay 
-from .serializers import CreatePaymentSerializer, RefundSerializer
-from order.models import Order, OrderDatail
+from .serializers import CreatePaymentSerializer
+from order.models import Order, OrderDetail
 from decimal import Decimal
 from django.db import transaction
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes, throttle_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.renderers import JSONRenderer
 
 # Hàm lấy IP Client (Helper function)
 def get_client_ip(request):
@@ -211,64 +215,3 @@ class VNPAYQueryView(APIView):
         if response.status_code == 200:
             return Response(response.json())
         return Response({'error': 'Failed to query VNPAY'}, status=response.status_code)
-
-
-"""class VNPAYRefundView(APIView):
-
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(request=RefundSerializer)
-    def post(self, request):
-        serializer = RefundSerializer(data=request.data)
-        if serializer.is_valid():
-            data = serializer.validated_data
-            
-            url = settings.VNPAY_API_URL
-            secret_key = settings.VNPAY_HASH_SECRET_KEY
-            vnp_TmnCode = settings.VNPAY_TMN_CODE
-            
-            vnp_RequestId = datetime.now().strftime('%H%M%S')
-            vnp_Version = '2.1.0'
-            vnp_Command = 'refund'
-            vnp_TransactionType = data['transaction_type']
-            vnp_TxnRef = data['order_id']
-            vnp_Amount = data['amount'] * 100 # VNPAY dùng đơn vị nhỏ nhất
-            vnp_OrderInfo = data['order_desc']
-            vnp_TransactionNo = '0' # VNPAY recommend '0'
-            vnp_TransactionDate = data['trans_date']
-            vnp_CreateDate = datetime.now().strftime('%Y%m%d%H%M%S')
-            vnp_CreateBy = request.user.username
-            vnp_IpAddr = get_client_ip(request)
-
-            hash_data = "|".join([
-                str(vnp_RequestId), str(vnp_Version), str(vnp_Command), str(vnp_TmnCode), 
-                str(vnp_TransactionType), str(vnp_TxnRef), str(vnp_Amount), str(vnp_TransactionNo), 
-                str(vnp_TransactionDate), str(vnp_CreateBy), str(vnp_CreateDate),
-                str(vnp_IpAddr), str(vnp_OrderInfo)
-            ])
-
-            secure_hash = hmac.new(secret_key.encode(), hash_data.encode(), hashlib.sha512).hexdigest()
-
-            payload = {
-                "vnp_RequestId": vnp_RequestId,
-                "vnp_TmnCode": vnp_TmnCode,
-                "vnp_Command": vnp_Command,
-                "vnp_TxnRef": vnp_TxnRef,
-                "vnp_Amount": vnp_Amount,
-                "vnp_OrderInfo": vnp_OrderInfo,
-                "vnp_TransactionDate": vnp_TransactionDate,
-                "vnp_CreateDate": vnp_CreateDate,
-                "vnp_IpAddr": vnp_IpAddr,
-                "vnp_TransactionType": vnp_TransactionType,
-                "vnp_TransactionNo": vnp_TransactionNo,
-                "vnp_CreateBy": vnp_CreateBy,
-                "vnp_Version": vnp_Version,
-                "vnp_SecureHash": secure_hash
-            }
-
-            response = requests.post(url, json=payload)
-            if response.status_code == 200:
-                return Response(response.json())
-            return Response({'error': 'Refund request failed'}, status=response.status_code)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)"""
