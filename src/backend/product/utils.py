@@ -16,7 +16,6 @@ def rename_product_image(filename):
 
 
 
-
 def upload_image(file_obj, file_name):
     # --- TRƯỜNG HỢP 1: LƯU LÊN CLOUD (IMAGEKIT) ---
     if settings.USE_CLOUD_STORAGE=='TRUE':
