@@ -10,6 +10,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
+from rest_framework.views import APIView
+from django.core.cache import cache
+from django.core.mail import send_mail
+import random
+from django.conf import settings
 
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -117,3 +122,71 @@ def login(request):
         "refresh": refresh_token 
     }, status = 200)
 
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        
+        if not email:
+            return Response({'error': 'Please enter email'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Kiểm tra email có tồn tại trong hệ thống không
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'message': 'If email exists please check email to get OTP'}, status=status.HTTP_200_OK)
+
+        # Sinh OTP ngẫu nhiên 6 số
+        otp = str(random.randint(100000, 999999))
+        
+        # 2. Lưu OTP vào Cache RAM trong 5 phút (300 giây)
+        cache_key = f"otp_reset_{email}"
+        cache.set(cache_key, otp, timeout=300)
+
+        # Gửi Email
+        try:
+            send_mail(
+                subject='[ShopLiteX] Mã xác thực đặt lại mật khẩu',
+                message=f'Xin chào,\n\nMã OTP của bạn là: {otp}\n\nMã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này cho ai.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response({'error': 'Error sending email, please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({'message': 'OTP code has been sent to your email.'}, status=status.HTTP_200_OK)
+
+
+class ResetPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        otp_input = request.data.get('otp')
+        new_password = request.data.get('new_password')
+
+        if not email or not otp_input or not new_password:
+             return Response({'error': 'Missing information'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Lấy OTP từ Cache ra kiểm tra
+        cache_key = f"otp_reset_{email}"
+        cached_otp = cache.get(cache_key)
+
+        # 2. Validate OTP
+        if not cached_otp:
+            return Response({'error': 'OTP code has expired or does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if str(cached_otp) != str(otp_input):
+            return Response({'error': 'Incorrect OTP code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. OTP đúng
+        try:
+            user = User.objects.get(email=email)
+            user.set_password(new_password)
+            user.save()
+            
+            cache.delete(cache_key)
+            
+            return Response({'message': 'Password reset successful.'}, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response({'error': 'User does not exist.'}, status=status.HTTP_404_NOT_FOUND)
