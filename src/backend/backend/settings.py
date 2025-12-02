@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'order',
     'shop',
     'feedback',
+    'payment',
     'rest_framework',
     'drf_spectacular',
     'django_extensions',

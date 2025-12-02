@@ -8,7 +8,7 @@ class PaymentTransaction(models.Model):
         FAILED = 'FAILED', _('Thất bại')
 
     order = models.ForeignKey(
-        'OrderDetail', 
+        'order.Order', 
         on_delete=models.CASCADE, 
         related_name='payments'
     )

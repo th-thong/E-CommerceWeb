@@ -6,7 +6,7 @@ class Product(models.Model):
     product_name = models.CharField(max_length=250)
     description = models.TextField()
     
-    base_price = models.DecimalField(max_digits=12, decimal_places=2) 
+    base_price = models.DecimalField(max_digits=12, decimal_places=2, default=0) 
     
     discount = models.IntegerField(default=0)
     
