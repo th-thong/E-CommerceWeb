@@ -180,9 +180,14 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 
-
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
+
+VNPAY_TMNCODE=os.environ.get('VNPAY_TMNCODE')
+VNPAY_HASH_SECRET=os.environ.get('VNPAY_HASH_SECRET')
+VNPAY_PAYMENT_URL=os.environ.get('VNPAY_PAYMENT_URL')
+VNPAY_RETURN_URL =os.environ.get('VNPAY_RETURN_URL')
+
