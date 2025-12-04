@@ -11,6 +11,10 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .serializers import PublicProductSerializer, ProductImageSerializer, PrivateProductSerializer
 from .models import Product
 from .serializers import PublicProductSerializer, PrivateProductSerializer
+from category.models import Category
+from order.models import OrderDetail
+from django.db.models import Count, OuterRef, Subquery, IntegerField, F
+from django.db.models.functions import Coalesce
 
 
 PRODUCT_NOT_FOUND_MSG = {"error": "Product not found or you do not have permission."}
@@ -150,5 +154,37 @@ class SellerProductDetailView(APIView):
 def get_public_trendy_product(request):
     pass
 
-def get_public_recommend_product(request):
-    pass
+
+@api_view(['GET'])
+@renderer_classes([JSONRenderer])
+@permission_classes([AllowAny])
+def get_recommend_product(request):
+
+    base_query = Product.objects.filter(is_active=True).prefetch_related(
+        'variants', 'images', 'category', 'shop'
+    )
+
+    if request.user.is_authenticated:
+        # 1. Tạo Subquery: Đếm số lượng sản phẩm trong cùng Category mà user này đã mua
+        # Logic: Tìm trong bảng OrderDetail, lọc theo User hiện tại và Category khớp với sản phẩm bên ngoài (OuterRef)
+        category_purchase_count = OrderDetail.objects.filter(
+            order__user=request.user,              # Của user này
+            product__category=OuterRef('category') # Khớp với category của Product đang xét
+        ).values('product__category').annotate(
+            cnt=Count('id')
+        ).values('cnt')
+
+        # 2. Gắn điểm (score) vào mỗi sản phẩm và sắp xếp
+        product_list = base_query.annotate(
+            # Coalesce dùng để chuyển giá trị NULL (chưa mua bao giờ) thành 0
+            cat_score=Coalesce(Subquery(category_purchase_count, output_field=IntegerField()), 0)
+        ).order_by(
+            '-cat_score', # Ưu tiên Category mua nhiều nhất (giảm dần)
+            '-created_at' # Sau đó mới đến mới nhất
+        )
+
+    else:
+        product_list = base_query.order_by('-created_at')
+        serializer = PublicProductSerializer(product_list, many=True)
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)

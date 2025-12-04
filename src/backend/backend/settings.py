@@ -175,7 +175,7 @@ USE_CLOUD_STORAGE=os.environ.get('USE_CLOUD_STORAGE')
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT'))
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT')) if (os.environ.get('EMAIL_PORT') is not None) else 1
 EMAIL_USE_SSL = True
 EMAIL_USE_TLS = False
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')

@@ -25,14 +25,14 @@ class OrderDetail(models.Model):
     product = models.ForeignKey(
         'product.Product', 
         on_delete=models.CASCADE,
-        related_name='order_items' 
+        related_name='order_details' 
     )
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     shop = models.ForeignKey(
         'shop.Shop', 
         on_delete=models.CASCADE,
-        related_name='order_items'
+        related_name='shop_items'
     )
     
     ORDER_STATUS_CHOICES = (
