@@ -32,7 +32,7 @@ def get_order_history(request) -> Response:
         print(order)
     except Exception as e:
         print(e)
-        return Response("Không có đơn hàng nào", status = status.HTTP_404_NOT_FOUND)
+        return Response({'message':'Không có đơn hàng nào'}, status = status.HTTP_404_NOT_FOUND)
     return Response(OrderSimpleSerializer(order, many = True).data, status = status.HTTP_200_OK)
     
 def create_new_order(request) -> Response:
@@ -56,7 +56,7 @@ def get_order_detail(request, order_id):
     try:
         order = Order.objects.get(id=order_id)
     except Exception as e:
-        return Response("Không tìm thấy đơn hàng", status = status.HTTP_404_NOT_FOUND)
+        return Response({'message':'Không tìm thấy đơn hàng'}, status = status.HTTP_404_NOT_FOUND)
     return Response(OrderSerializer(order).data, status = status.HTTP_200_OK)
 
 
@@ -70,5 +70,5 @@ def get_shop_order(request):
         details = OrderDetail.objects.filter(shop_id = shop.id)
 
     except Exception as e:
-        return Response("Đã có lỗi xảy ra khi tìm shop", status = status.HTTP_404_NOT_FOUND)
+        return Response({'message':'Đã có lỗi xảy ra khi tìm shop'}, status = status.HTTP_404_NOT_FOUND)
     return Response(ShopOrderDetailSerializer(details, many = True).data, status = status.HTTP_200_OK)
