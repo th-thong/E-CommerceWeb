@@ -66,6 +66,4 @@ class ProductImage(models.Model):
     order = models.IntegerField(default=0) 
 
     def __str__(self):
-        if self.variant:
-            return f"Image for {self.variant.sku}"
         return f"Image for {self.product.product_name}"
