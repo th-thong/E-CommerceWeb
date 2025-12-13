@@ -44,7 +44,6 @@ class NewOrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context.get("request")
-
         if not request or not request.user:
             raise serializers.ValidationError("User không tồn tại")
 
@@ -54,25 +53,49 @@ class NewOrderSerializer(serializers.ModelSerializer):
     def _create_order(self, validated_data, request):
         total_price = 0
 
+        # Tạo Order cha trước
         order = Order.objects.create(
             user=request.user,
             total_price=0
         )
 
         for item in validated_data["items"]:
-            product = Product.objects.get(id=item["product"].id)
-            shop = Shop.objects.get(id=product.shop_id)
+            # 1. Lấy Product Object trực tiếp
+            product = item["product"] 
+            
+            # 2. Lấy Shop
+            shop = product.shop 
 
             quantity = item["quantity"]
-            price = product.price * quantity
+            
+            # 3. Kiểm tra logic giá
+            price_per_unit = getattr(product, 'base_price', 0) 
 
+            line_total = price_per_unit * quantity
+
+            # 4. Kiểm tra tồn kho
             if quantity > product.quantity:
-                raise serializers.ValidationError("Số lượng hàng đặt vượt quá số lượng hàng shop có")
+                # Rollback transaction ngay lập tức
+                raise serializers.ValidationError(
+                    f"Sản phẩm '{product.product_name}' không đủ số lượng. Kho còn: {product.quantity}"
+                )
 
-            OrderDetail.objects.create(order=order, product=product, shop=shop, quantity=quantity, price=price)
+            # 5. Tạo Order Detail
+            OrderDetail.objects.create(
+                order=order, 
+                product=product, 
+                shop=shop, 
+                quantity=quantity, 
+                price=line_total # Lưu tổng giá của dòng này (hoặc đơn giá tùy logic bạn muốn)
+            )
 
-            total_price += price
+            # 6. Trừ tồn kho
+            product.quantity = product.quantity - quantity
+            product.save()
 
+            total_price += line_total
+
+        # Cập nhật tổng tiền cho Order cha
         order.total_price = total_price
         order.save()
 
