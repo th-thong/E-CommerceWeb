@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Category
 
-class CategorySeriallizer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField(source='id')
     class Meta:
         model=Category

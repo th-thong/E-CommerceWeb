@@ -5,11 +5,12 @@ from rest_framework.renderers import JSONRenderer
 from http.client import HTTPResponse
 from rest_framework.response import Response
 from .models import Category
-from .serializers import CategorySeriallizer
+from .serializers import CategorySerializer
+from rest_framework import status
 
 @api_view(['GET'])
 @renderer_classes([JSONRenderer])
 def get_category_list(request):
-    caterories = Category.objects.all()
-    categories = CategorySeriallizer(categories, many=True)
-    return Response(categories.data)
+    categories = Category.objects.all()
+    serializer = CategorySerializer(categories, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
