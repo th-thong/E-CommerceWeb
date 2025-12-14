@@ -20,7 +20,7 @@ User = get_user_model()
 @permission_classes([IsAuthenticated])
 @renderer_classes([JSONRenderer])
 def cod(request):
-    serializer = CODSerializers(request.data)
+    serializer = CODSerializers(data=request.data)
     
     if serializer.is_valid():
         try:

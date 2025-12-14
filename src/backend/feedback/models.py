@@ -9,7 +9,7 @@ class Feedback(models.Model):
         ('banned', 'Banned'),
         ('normal', 'Normal'), 
     )
-    status = models.CharField(max_length=7, choices=STATUS_CHOICES, default='active')
+    status = models.CharField(max_length=7, choices=STATUS_CHOICES, default='normal')
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE,
@@ -20,6 +20,7 @@ class Feedback(models.Model):
         on_delete=models.CASCADE,
         related_name='feedbacks' # product.feedbacks.all()
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Feedback by {self.user.username} for {self.product.product_name}"

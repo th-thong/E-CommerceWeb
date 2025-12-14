@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import Home from "./pages/Home"
-import SellerDashboard from "./components/seller/sellerdashboard"
-import Payment from "./pages/Payment"
+import SellerDashboard from "./pages/Seller/Dashboard/Dashboard"
+import Payment from "./pages/Public/Payment/Payment"
 
 const App = () => {
   return (

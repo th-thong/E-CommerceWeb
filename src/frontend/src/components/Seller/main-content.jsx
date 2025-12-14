@@ -1,7 +1,7 @@
-import TodoSection from "./todo"
-import AnalyticsSection from "./analytics"
-import ProductManagement from "./productmanagement"
-import OrderManagement from "./ordermanagement"
+import TodoSection from "./TodoList"
+import AnalyticsSection from "./AnalyticsChart"
+import ProductManagement from "@/pages/Seller/ProductManager/ProductManagement"
+import OrderManagement from "@/pages/Seller/OrderManager/OrderManagement"
 import "./main-content.css"
 
 const MainContent = ({ activeMenu, orders, setOrders, products, setProducts }) => {

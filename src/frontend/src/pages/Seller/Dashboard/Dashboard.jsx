@@ -1,8 +1,8 @@
 "use client"
 import { useState } from "react"
-import Sidebar from "./sidebar"
-import MainContent from "./main-content"
-import "./sellerdashboard.css"
+import Sidebar from "@/components/Layout/Sidebar/Sidebar";
+import MainContent from "@/components/Seller/main-content"
+import "./Dashboard.css"
 
 const SellerDashboard = () => {
   const [activeMenu, setActiveMenu] = useState("todo")

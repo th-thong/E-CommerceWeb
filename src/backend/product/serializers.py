@@ -8,7 +8,7 @@ import json
 class ProductVariantSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductVariant
-        fields = ['id', 'sku', 'price', 'quantity', 'attributes', 'is_active']
+        fields = ['id', 'price', 'quantity', 'attributes', 'is_active']
 
 # 2. Serializer cho Image (Hiển thị)
 class ProductImageSerializer(serializers.ModelSerializer):

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import "./payment.css"
+import "./Payment.css"
 
 const mockOrder = {
   id: "DH-2025-0001",

@@ -1,8 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import "./auth-modal.css"
-import { login, register } from "../../api/auth"
+import "./AuthModal.css"
+import { login, register } from "@/api/auth"
 
 export default function AuthModal({ isOpen, onClose, initialMode = "login", onModeChange, onAuthSuccess }) {
   const [mode, setMode] = useState(initialMode)

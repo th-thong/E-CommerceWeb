@@ -43,9 +43,13 @@ def create_new_order(request) -> Response:
             order = serializer.save()
             return Response(OrderSerializer(order).data, status = status.HTTP_200_OK)
         except Exception as e:
-            print(e)
-            return Response({'message': 'Tạo đơn hàng không thành công'}, status = status.HTTP_400_BAD_REQUEST)
-    return Response({'message' : serializer.errors}, status = status.HTTP_400_BAD_REQUEST)
+            print(f"Lỗi chi tiết: {e}")
+            return Response({
+                'message': 'Tạo đơn hàng thất bại', 
+                'error_detail': str(e) 
+            }, status = status.HTTP_400_BAD_REQUEST)
+            
+    return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -54,10 +58,27 @@ def create_new_order(request) -> Response:
 @renderer_classes([JSONRenderer])
 def get_order_detail(request, order_id):
     try:
-        order = Order.objects.get(id=order_id)
+        order = Order.objects.prefetch_related(
+            'items',              # Load danh sách OrderDetail
+            'items__product',     # Load thông tin Product bên trong
+            'items__variant',     # Load thông tin Variant (nếu có dùng)
+            'items__shop'         # Load thông tin Shop
+        ).get(id=order_id, user=request.user)
+        
+    except Order.DoesNotExist:
+        # Trả về 404 nếu không tìm thấy hoặc đơn hàng đó không phải của user này
+        return Response(
+            {'message': 'Không tìm thấy đơn hàng hoặc bạn không có quyền truy cập.'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
     except Exception as e:
-        return Response({'message':'Không tìm thấy đơn hàng'}, status = status.HTTP_404_NOT_FOUND)
-    return Response(OrderSerializer(order).data, status = status.HTTP_200_OK)
+        # Bắt các lỗi hệ thống khác (DB lỗi, code lỗi...)
+        return Response(
+            {'message': 'Lỗi hệ thống', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -66,9 +87,23 @@ def get_order_detail(request, order_id):
 @renderer_classes([JSONRenderer])
 def get_shop_order(request):
     try:
-        shop = Shop.objects.get(owner_id = request.user.id)
-        details = OrderDetail.objects.filter(shop_id = shop.id)
-
+        # 1. Tìm Shop của user hiện tại
+        shop = Shop.objects.get(owner=request.user)
+        
+        # 2. Lấy danh sách OrderDetail
+        details = OrderDetail.objects.filter(shop=shop)\
+            .select_related('product', 'variant', 'order', 'order__user')\
+            .order_by('-id') # Sắp xếp đơn mới nhất lên đầu
+            
+    except Shop.DoesNotExist:
+        return Response(
+            {'message': 'Bạn chưa đăng ký Shop hoặc Shop không tồn tại.'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
     except Exception as e:
-        return Response({'message':'Đã có lỗi xảy ra khi tìm shop'}, status = status.HTTP_404_NOT_FOUND)
-    return Response(ShopOrderDetailSerializer(details, many = True).data, status = status.HTTP_200_OK)
+        return Response(
+            {'message': 'Lỗi hệ thống', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+        
+    return Response(ShopOrderDetailSerializer(details, many=True).data, status=status.HTTP_200_OK)

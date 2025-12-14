@@ -1,8 +1,8 @@
-import "./navbar.css";
+import "./Navbar.css";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import AuthModal from "./auth-modal";
-import { getProfile } from "../../api/auth";
+import AuthModal from "@/components/Common/AuthModal/AuthModal";
+import { getProfile } from "@/api/auth";
 
 const TOKEN_KEY = "auth_tokens";
 
