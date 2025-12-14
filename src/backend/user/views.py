@@ -2,12 +2,10 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.renderers import JSONRenderer
-from http.client import HTTPResponse
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserSerializer, UserRegisterSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.views import APIView
@@ -19,6 +17,27 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
+@extend_schema(
+    methods=['GET'],
+    summary="Lấy thông tin cá nhân (Profile)",
+    description="Trả về thông tin chi tiết của người dùng đang đăng nhập dựa trên Token gửi kèm.",
+    responses={
+        200: UserSerializer,
+    }
+)
+@extend_schema(
+    methods=['PUT'],
+    summary="Cập nhật thông tin cá nhân",
+    description="Cho phép cập nhật một phần thông tin (username,...). Chỉ cần gửi các trường muốn thay đổi.",
+    request=UserSerializer,
+    responses={
+        200: UserSerializer,
+        400: inline_serializer(
+            name='UpdateProfileError',
+            fields={'error': serializers.CharField(default='Bad Request / Update Failed')}
+        )
+    }
+)
 @api_view(['GET', 'PUT'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -124,6 +143,33 @@ def login(request):
 
 
 class ForgotPasswordView(APIView):
+    
+    @extend_schema(
+        # 1. Định nghĩa Input: Chỉ cần Email
+        request=inline_serializer(
+            name='ForgotPasswordRequest',
+            fields={
+                'email': serializers.EmailField(help_text="Nhập email tài khoản cần khôi phục")
+            }
+        ),
+        # 2. Định nghĩa Output
+        responses={
+            200: inline_serializer(
+                name='ForgotPasswordSuccess',
+                fields={'message': serializers.CharField(default='OTP code has been sent to your email.')}
+            ),
+            400: inline_serializer(
+                name='ForgotPasswordError',
+                fields={'error': serializers.CharField(default='Please enter email')}
+            ),
+            500: inline_serializer(
+                name='EmailServiceError',
+                fields={'error': serializers.CharField(default='Error sending email...')}
+            )
+        },
+        summary="Quên mật khẩu (Gửi OTP)",
+        description="Người dùng nhập Email. Hệ thống sẽ kiểm tra và gửi mã OTP (6 số) về email nếu tồn tại. OTP có hiệu lực 5 phút."
+    )
     def post(self, request):
         email = request.data.get('email')
         
@@ -159,6 +205,35 @@ class ForgotPasswordView(APIView):
 
 
 class ResetPasswordView(APIView):
+    
+    @extend_schema(
+        # 1. Định nghĩa Input: Cần Email, OTP và Mật khẩu mới
+        request=inline_serializer(
+            name='ResetPasswordRequest',
+            fields={
+                'email': serializers.EmailField(),
+                'otp': serializers.CharField(help_text="Mã OTP 6 số nhận được từ email"),
+                'new_password': serializers.CharField(min_length=8, help_text="Mật khẩu mới")
+            }
+        ),
+        # 2. Định nghĩa Output
+        responses={
+            200: inline_serializer(
+                name='ResetPasswordSuccess',
+                fields={'message': serializers.CharField(default='Password reset successful.')}
+            ),
+            400: inline_serializer(
+                name='ResetPasswordError',
+                fields={'error': serializers.CharField(default='Incorrect OTP code or Missing info.')}
+            ),
+            404: inline_serializer(
+                name='UserNotFoundReset',
+                fields={'error': serializers.CharField(default='User does not exist.')}
+            )
+        },
+        summary="Xác thực OTP & Đổi mật khẩu",
+        description="Người dùng gửi Email + OTP + Mật khẩu mới. Hệ thống kiểm tra OTP trong Cache, nếu đúng sẽ đổi mật khẩu."
+    )
     def post(self, request):
         email = request.data.get('email')
         otp_input = request.data.get('otp')

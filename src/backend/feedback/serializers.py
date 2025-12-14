@@ -4,9 +4,10 @@ from product.models import Product
 
 class FeedbackSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.CharField(source='user.id', read_only=True)
     class Meta:
         model = Feedback
-        fields = ['id', 'rating', 'review', 'user_name', 'created_at']
+        fields = ['id', 'rating', 'review', 'user_name','user_id', 'created_at']
 
 class NewFeedbackSerializer(serializers.Serializer):
     rating = serializers.IntegerField(min_value = 1, max_value = 5)

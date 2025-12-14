@@ -1,15 +1,12 @@
-from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.renderers import JSONRenderer
-from http.client import HTTPResponse
 from rest_framework.response import Response
 from .serializers import ShopSerializer, ShopRegisterSerializer
 from rest_framework import status
 from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
-from drf_spectacular.utils import extend_schema_view, extend_schema
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import extend_schema_view, extend_schema, inline_serializer
 from rest_framework import serializers
 
 @extend_schema_view(
@@ -35,6 +32,17 @@ class ShopView(APIView):
         except ObjectDoesNotExist:
             return None
 
+    @extend_schema(
+        summary="Lấy thông tin Shop của tôi",
+        description="Trả về thông tin chi tiết Shop của User đang đăng nhập.",
+        responses={
+            200: ShopSerializer,
+            404: inline_serializer(
+                name='ShopNotFound', 
+                fields={'error': serializers.CharField(default='You do not own any shop')}
+            )
+        }
+    )
     def get(self, request):
         shop = self.get_object(request.user)
         if shop is None:
@@ -43,6 +51,22 @@ class ShopView(APIView):
         serializer = ShopSerializer(shop)
         return Response(serializer.data)
 
+    @extend_schema(
+        request=ShopSerializer, 
+        summary="Cập nhật thông tin Shop",
+        description="Cho phép User chỉnh sửa thông tin Shop (Tên, mô tả, địa chỉ...).",
+        responses={
+            200: ShopSerializer,
+            400: inline_serializer(
+                name='ShopUpdateError', 
+                fields={'detail': serializers.CharField()}
+            ),
+            404: inline_serializer(
+                name='ShopNotFoundUpdate', 
+                fields={'error': serializers.CharField()}
+            )
+        }
+    )
     def put(self, request):
         shop = self.get_object(request.user)
         if shop is None:
@@ -56,6 +80,21 @@ class ShopView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    @extend_schema(
+        request=ShopRegisterSerializer,
+        summary="Đăng ký Shop mới",
+        description="Đăng ký mở Shop bán hàng. Mỗi User chỉ được tạo duy nhất 1 Shop.",
+        responses={
+            201: inline_serializer(
+                name='ShopCreateSuccess', 
+                fields={'message': serializers.CharField(default='Successfully created shop')}
+            ),
+            400: inline_serializer(
+                name='ShopCreateError', 
+                fields={'error': serializers.CharField(default='You cannot create more shops')}
+            )
+        }
+    )
     def post(self, request):
         if self.get_object(request.user) is not None:
             return Response(
