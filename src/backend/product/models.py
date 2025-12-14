@@ -36,9 +36,8 @@ class ProductVariant(models.Model):
         on_delete=models.CASCADE, 
         related_name='variants'
     )
-    
-    sku = models.CharField(max_length=100, unique=True)
-    
+
+
     price = models.DecimalField(max_digits=12, decimal_places=2)
     
     quantity = models.IntegerField(default=0)

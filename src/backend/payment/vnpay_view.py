@@ -29,6 +29,7 @@ def get_client_ip(request):
 
 class VNPAYCreatePaymentView(APIView):
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     @extend_schema(request=CreatePaymentSerializer, responses={200: None})
     def post(self, request):
@@ -43,16 +44,18 @@ class VNPAYCreatePaymentView(APIView):
             bank_code = data.get('bank_code', '')
             language = data.get('language', 'vn')
             ipaddr = get_client_ip(request)
+            
+            
 
             # 2. Build URL Payment
             vnp = vnpay()
             vnp.requestData['vnp_Version'] = '2.1.0'
             vnp.requestData['vnp_Command'] = 'pay'
             vnp.requestData['vnp_TmnCode'] = settings.VNPAY_TMN_CODE
-            vnp.requestData['vnp_Amount'] = amount * 100 # VNPAY yêu cầu nhân 100
+            vnp.requestData['vnp_Amount'] = int(amount * 100) # VNPAY yêu cầu nhân 100
             vnp.requestData['vnp_CurrCode'] = 'VND'
             vnp.requestData['vnp_TxnRef'] = order_id
-            vnp.requestData['vnp_OrderInfo'] = ""
+            vnp.requestData['vnp_OrderInfo'] = f"Thanh toan don hang {order_id}"
             vnp.requestData['vnp_OrderType'] = order_type
             
             if language:
@@ -64,7 +67,10 @@ class VNPAYCreatePaymentView(APIView):
                 vnp.requestData['vnp_BankCode'] = bank_code
 
             vnp.requestData['vnp_CreateDate'] = datetime.now().strftime('%Y%m%d%H%M%S')
-            vnp.requestData['vnp_IpAddr'] = ipaddr
+            if ipaddr:
+                vnp.requestData['vnp_IpAddr'] = ipaddr
+            else:
+                vnp.requestData['vnp_IpAddr'] = '127.0.0.1'
             vnp.requestData['vnp_ReturnUrl'] = settings.VNPAY_RETURN_URL
 
             # 3. Tạo URL
@@ -188,6 +194,10 @@ class VNPAYQueryView(APIView):
         vnp_TransactionDate = trans_date
         vnp_CreateDate = datetime.now().strftime('%Y%m%d%H%M%S')
         vnp_IpAddr = get_client_ip(request)
+        if vnp_IpAddr:
+            pass
+        else:
+            vnp_IpAddr = '127.0.0.1'
 
         hash_data = "|".join([
             str(vnp_RequestId), str(vnp_Version), str(vnp_Command), str(vnp_TmnCode),

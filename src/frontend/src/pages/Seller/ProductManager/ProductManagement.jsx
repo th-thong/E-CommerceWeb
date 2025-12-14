@@ -2,8 +2,8 @@
 
 import "./section.css"
 import { useState, useEffect } from "react"
-import { createSellerProduct } from "../../../api/products"
-import { fetchCategories } from "../../../api/categories"
+import { createSellerProduct } from "@/api/products"
+import { fetchCategories } from "@/api/categories"
 
 const TOKEN_KEY = "auth_tokens"
 

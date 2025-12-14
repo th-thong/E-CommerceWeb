@@ -7,5 +7,6 @@ urlpatterns = [
     path('auth/', include('user.auth_urls')),
     path('products/', include('product.urls')),
     path('orders/', include('order.urls')),
-    path('payment/',include('payment.urls'))
+    path('payment/',include('payment.urls')),
+    path('feedback/',include('feedback.urls'))
 ]

@@ -37,7 +37,7 @@ def get_list_of_public_product(request):
     """
     Lấy danh sách tất cả sản phẩm đang hoạt động (Mới nhất lên đầu).
     """
-    product_list = Product.objects.filter(is_active=True).prefetch_related(
+    product_list = Product.objects.prefetch_related(
         'variants', 'images', 'category', 'shop'
     ).order_by('-created_at')
     
@@ -54,8 +54,7 @@ def get_public_product_detail(request, product_id):
     """
     try:
         product = Product.objects.prefetch_related('variants', 'images', 'shop', 'category').get(
-            id=product_id, 
-            is_active=True
+            id=product_id
         )
         serializer = ProductSerializer(product)
         return Response(serializer.data, status=status.HTTP_200_OK)

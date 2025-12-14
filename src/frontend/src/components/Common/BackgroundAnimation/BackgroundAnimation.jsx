@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import './backgroundanimation.css';
+import './BackgroundAnimation.css';
 
 const BackgroundAnimation = () => {
   useEffect(() => {

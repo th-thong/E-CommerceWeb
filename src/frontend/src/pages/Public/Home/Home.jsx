@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import "./home-page.css"
+import "./Home.css"
 
 const HomePage = () => {
   const navigate = useNavigate()
