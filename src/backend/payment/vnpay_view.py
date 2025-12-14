@@ -7,16 +7,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drf_spectacular.utils import extend_schema
 from .payment_provider.vnpay import vnpay 
 from .serializers import CreatePaymentSerializer
-from order.models import Order, OrderDetail
+from order.models import Order
 from decimal import Decimal
 from django.db import transaction
-from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.renderers import JSONRenderer
+from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer, OpenApiTypes
+from rest_framework import serializers
 
 # Hàm lấy IP Client (Helper function)
 def get_client_ip(request):
@@ -31,7 +30,21 @@ class VNPAYCreatePaymentView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
-    @extend_schema(request=CreatePaymentSerializer, responses={200: None})
+    @extend_schema(
+        summary="Tạo URL thanh toán VNPAY",
+        description="Gửi thông tin đơn hàng (ID, số tiền) để nhận về đường link chuyển hướng sang cổng thanh toán VNPAY.",
+        request=CreatePaymentSerializer,
+        responses={
+            200: inline_serializer(
+                name='VNPAYUrlResponse',
+                fields={'payment_url': serializers.URLField(help_text="Đường dẫn redirect sang VNPAY")}
+            ),
+            400: inline_serializer(
+                name='VNPAYCreateError',
+                fields={'detail': serializers.CharField()}
+            )
+        }
+    )
     def post(self, request):
         serializer = CreatePaymentSerializer(data=request.data)
         if serializer.is_valid():
@@ -88,6 +101,25 @@ class VNPAYIPNView(APIView):
     """
     permission_classes = [AllowAny] 
 
+    @extend_schema(
+        summary="IPN (Webhook từ VNPAY)",
+        description="API này chỉ dành cho Server VNPAY gọi tự động để cập nhật trạng thái đơn hàng (Pending -> Paid). Người dùng không gọi trực tiếp.",
+        parameters=[
+            OpenApiParameter(name='vnp_SecureHash', type=str, required=True, description='Mã kiểm tra toàn vẹn'),
+            OpenApiParameter(name='vnp_TxnRef', type=str, required=True, description='Mã đơn hàng (Order ID)'),
+            OpenApiParameter(name='vnp_Amount', type=str, required=True, description='Số tiền (đã nhân 100)'),
+            OpenApiParameter(name='vnp_ResponseCode', type=str, required=True, description='Mã phản hồi (00 là thành công)'),
+        ],
+        responses={
+            200: inline_serializer(
+                name='IPNResponse',
+                fields={
+                    'RspCode': serializers.CharField(),
+                    'Message': serializers.CharField()
+                }
+            )
+        }
+    )
     def get(self, request):
             inputData = request.GET
             if inputData:
@@ -143,7 +175,26 @@ class VNPAYReturnView(APIView):
     Dùng để xác thực lại checksum một lần nữa trước khi hiển thị "Thành công" cho user.
     """
     permission_classes = [AllowAny]
-
+    
+    @extend_schema(
+        summary="VNPAY Return URL",
+        description="Frontend gọi API này sau khi user được redirect từ VNPAY về, để xác thực lại checksum và hiển thị kết quả.",
+        parameters=[
+            OpenApiParameter(name='vnp_ResponseCode', type=str, description='00: Thành công'),
+            OpenApiParameter(name='vnp_TxnRef', type=str, description='Mã đơn hàng'),
+            OpenApiParameter(name='vnp_SecureHash', type=str, description='Checksum'),
+        ],
+        responses={
+            200: inline_serializer(
+                name='ReturnSuccess',
+                fields={
+                    'status': serializers.CharField(),
+                    'message': serializers.CharField(),
+                    'data': serializers.DictField()
+                }
+            )
+        }
+    )
     def get(self, request):
         inputData = request.GET
         if inputData:
@@ -173,7 +224,21 @@ class VNPAYQueryView(APIView):
     API kiểm tra trạng thái giao dịch (QueryDR)
     """
     permission_classes = [IsAuthenticated]
-
+    
+    @extend_schema(
+        summary="Truy vấn trạng thái giao dịch (QueryDR)",
+        description="Chủ động hỏi VNPAY xem giao dịch này đã thành công chưa (Dùng để đối soát hoặc khi IPN bị lỗi).",
+        request=inline_serializer(
+            name='VNPAYQueryRequest',
+            fields={
+                'order_id': serializers.CharField(help_text="Mã đơn hàng đã gửi sang VNPAY"),
+                'trans_date': serializers.CharField(help_text="Thời gian tạo giao dịch (Format: YYYYMMDDHHmmss)")
+            }
+        ),
+        responses={
+            200: OpenApiTypes.OBJECT # Trả về JSON thô từ VNPAY
+        }
+    )
     def post(self, request):
         order_id = request.data.get('order_id')
         trans_date = request.data.get('trans_date') # Format: YYYYMMDDHHmmss

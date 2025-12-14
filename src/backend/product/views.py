@@ -1,26 +1,21 @@
-from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Sum, Count, OuterRef, Subquery, IntegerField
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
-import json
-
+from rest_framework import serializers, status
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view, renderer_classes, permission_classes, parser_classes
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.renderers import JSONRenderer
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer
 
-# Import các Models
-from .models import Product, ProductImage
+from .models import Product
 from order.models import OrderDetail 
-
-# Import Serializer duy nhất
 from .serializers import ProductSerializer 
 
 # --- CONSTANTS ---
@@ -30,9 +25,12 @@ PRODUCT_NOT_FOUND_MSG = {"error": "Product not found or you do not have permissi
 #                               PUBLIC VIEWS
 # ============================================================================
 
+@extend_schema(
+    responses={200: ProductSerializer(many=True)},
+    summary="Lấy danh sách tất cả sản phẩm",
+    description="Trả về danh sách toàn bộ sản phẩm, sắp xếp mới nhất lên đầu."
+)
 @api_view(['GET'])
-@renderer_classes([JSONRenderer])
-@permission_classes([AllowAny])
 def get_list_of_public_product(request):
     """
     Lấy danh sách tất cả sản phẩm đang hoạt động (Mới nhất lên đầu).
@@ -45,9 +43,26 @@ def get_list_of_public_product(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='product_id', 
+            type=int, 
+            location=OpenApiParameter.PATH, 
+            description='ID của sản phẩm cần xem'
+        )
+    ],
+    responses={
+        200: ProductSerializer,
+        404: inline_serializer(
+            name='ProductNotFound', 
+            fields={'error': serializers.CharField()}
+        )
+    },
+    summary="Xem chi tiết sản phẩm",
+    description="Lấy thông tin chi tiết (bao gồm variants, images, shop) của một sản phẩm."
+)
 @api_view(['GET'])
-@renderer_classes([JSONRenderer])
-@permission_classes([AllowAny])
 def get_public_product_detail(request, product_id):
     """
     Xem chi tiết một sản phẩm cụ thể.
@@ -62,9 +77,12 @@ def get_public_product_detail(request, product_id):
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+@extend_schema(
+    responses={200: ProductSerializer(many=True)},
+    summary="Top sản phẩm bán chạy (Trendy)",
+    description="Trả về danh sách 10 sản phẩm có số lượng bán cao nhất trong 7 ngày qua."
+)
 @api_view(['GET'])
-@renderer_classes([JSONRenderer])
-@permission_classes([AllowAny])
 def get_trendy_product(request):
     """
     Top 10 sản phẩm bán chạy nhất trong 7 ngày qua.
@@ -74,7 +92,6 @@ def get_trendy_product(request):
 
     # 2. Truy vấn
     trendy_products = Product.objects.filter(
-        is_active=True,
         order_details__order__created_at__gte=last_week 
     ).annotate(
         total_sold=Sum('order_details__quantity') 
@@ -87,15 +104,17 @@ def get_trendy_product(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    responses={200: ProductSerializer(many=True)},
+    summary="Sản phẩm Flash Sale",
+    description="Lấy danh sách các sản phẩm đang giảm giá sâu (Discount >= 50%)."
+)
 @api_view(['GET'])
-@renderer_classes([JSONRenderer])
-@permission_classes([AllowAny])
 def get_flashsale_product(request):
     """
     Lấy các sản phẩm đang giảm giá sâu (>= 50%).
     """
     flashsale_product = Product.objects.filter(
-        is_active=True,
         discount__gte=50
     ).prefetch_related(
         'variants', 'images', 'category', 'shop'
@@ -105,9 +124,16 @@ def get_flashsale_product(request):
     return Response(serializer.data, status=status.HTTP_200_OK) 
 
 
+@extend_schema(
+    responses={200: ProductSerializer(many=True)},
+    summary="Gợi ý sản phẩm (Recommend)",
+    description="""
+    Gợi ý sản phẩm thông minh:
+    - **Đã đăng nhập:** Ưu tiên hiển thị sản phẩm thuộc Category mà User hay mua nhất.
+    - **Chưa đăng nhập:** Hiển thị sản phẩm mới nhất.
+    """
+)
 @api_view(['GET'])
-@renderer_classes([JSONRenderer])
-@permission_classes([AllowAny])
 def get_recommend_product(request):
     """
     Gợi ý sản phẩm:
@@ -162,6 +188,11 @@ class SellerProductListCreateView(APIView):
         except ObjectDoesNotExist:
             return None
 
+    @extend_schema(
+        responses={200: ProductSerializer(many=True)},
+        summary="Lấy danh sách sản phẩm của Shop",
+        description="API dành cho người bán. Trả về tất cả sản phẩm thuộc Shop của User đang đăng nhập."
+    )
     def get(self, request):
         shop = self.get_shop(request.user)
         if not shop:
@@ -170,7 +201,17 @@ class SellerProductListCreateView(APIView):
         products = Product.objects.filter(shop=shop).prefetch_related('variants', 'images', 'category')
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
+    @extend_schema(
+        request=ProductSerializer,
+        responses={
+            201: ProductSerializer,
+            400: inline_serializer(name='ProductCreateError', fields={'error': serializers.CharField()}),
+            403: inline_serializer(name='ShopError', fields={'error': serializers.CharField()})
+        },
+        summary="Tạo sản phẩm mới",
+        description="Người bán tạo sản phẩm mới kèm theo Variants và Images (Hỗ trợ Multipart/Form-data). Với , variant là 1 list gồm {\"price\": 150000,\"quantity\": 50,\"attributes\": {\"color\": \"White\", \"type\": \"S\"}, các trường attributes là người dùng nhập"
+    )
     def post(self, request):        
         shop = self.get_shop(request.user)
         if not shop:
@@ -212,6 +253,14 @@ class SellerProductDetailView(APIView):
         except Product.DoesNotExist:
             return None
 
+    @extend_schema(
+        summary="Xem chi tiết sản phẩm của Shop",
+        description="Người bán xem chi tiết một sản phẩm do mình tạo ra.",
+        responses={
+            200: ProductSerializer,
+            404: inline_serializer(name='SellerProductNotFound', fields={'error': serializers.CharField()})
+        }
+    )
     def get(self, request, product_id):
         product = self.get_object(request, product_id)
         if not product:
@@ -220,6 +269,15 @@ class SellerProductDetailView(APIView):
         serializer = ProductSerializer(product)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        request=ProductSerializer,
+        summary="Cập nhật sản phẩm",
+        description="Cập nhật thông tin sản phẩm (Partial update cho phép cập nhật từng trường).",
+        responses={
+            200: ProductSerializer,
+            404: inline_serializer(name='UpdateError', fields={'error': serializers.CharField()})
+        }
+    )
     def put(self, request, product_id):
         product = self.get_object(request, product_id)
         if not product:
@@ -240,6 +298,14 @@ class SellerProductDetailView(APIView):
                 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        summary="Xóa sản phẩm",
+        description="Xóa sản phẩm khỏi hệ thống (Chỉ chủ sở hữu mới xóa được).",
+        responses={
+            204: inline_serializer(name='DeleteSuccess', fields={'message': serializers.CharField()}),
+            404: inline_serializer(name='DeleteError', fields={'error': serializers.CharField()})
+        }
+    )
     def delete(self, request, product_id):
         product = self.get_object(request, product_id)
         if not product:

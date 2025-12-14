@@ -1,0 +1,1861 @@
+openapi: 3.0.3
+info:
+  title: ''
+  version: 0.0.0
+paths:
+  /api/auth/forgot-password/:
+    post:
+      operationId: auth_forgot_password_create
+      description: Người dùng nhập Email. Hệ thống sẽ kiểm tra và gửi mã OTP (6 số)
+        về email nếu tồn tại. OTP có hiệu lực 5 phút.
+      summary: Quên mật khẩu (Gửi OTP)
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgotPasswordSuccess'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgotPasswordError'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailServiceError'
+          description: ''
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      summary: Đăng nhập
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginFailResponse'
+          description: ''
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      summary: Đăng kí tài khoản
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterSuccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterFailResponse'
+          description: ''
+  /api/auth/reset-password/:
+    post:
+      operationId: auth_reset_password_create
+      description: Người dùng gửi Email + OTP + Mật khẩu mới. Hệ thống kiểm tra OTP
+        trong Cache, nếu đúng sẽ đổi mật khẩu.
+      summary: Xác thực OTP & Đổi mật khẩu
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetPasswordSuccess'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetPasswordError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserNotFoundReset'
+          description: ''
+  /api/categories/:
+    get:
+      operationId: categories_list
+      description: API trả về toàn bộ danh mục sản phẩm có trong hệ thống.
+      summary: Lấy danh sách danh mục
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+  /api/feedback/{product_id}/:
+    get:
+      operationId: feedback_list
+      description: Lấy danh sách các đánh giá đã được duyệt (status='normal') của
+        một sản phẩm cụ thể.
+      summary: Xem danh sách đánh giá
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        description: ID của sản phẩm cần xem đánh giá
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Feedback'
+          description: ''
+    post:
+      operationId: feedback_create
+      description: Người dùng (đã đăng nhập) gửi đánh giá và nhận xét cho sản phẩm.
+      summary: Gửi đánh giá mới
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        description: ID của sản phẩm muốn đánh giá
+        required: true
+      tags:
+      - feedback
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewFeedback'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NewFeedback'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NewFeedback'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackSuccess'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackError'
+          description: ''
+  /api/orders/:
+    get:
+      operationId: orders_list
+      description: Trả về danh sách tóm tắt các đơn hàng mà user hiện tại đã mua.
+      summary: Lấy lịch sử mua hàng
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderSimple'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoOrderFound'
+          description: ''
+    post:
+      operationId: orders_create
+      description: User gửi danh sách sản phẩm (items) để tạo đơn. Hệ thống sẽ trừ
+        tồn kho và tính tổng tiền.
+      summary: Tạo đơn hàng mới
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NewOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NewOrder'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCreateError'
+          description: ''
+  /api/orders/{order_id}/:
+    get:
+      operationId: orders_retrieve
+      description: Lấy thông tin chi tiết một đơn hàng cụ thể. Chỉ chủ sở hữu đơn
+        hàng mới xem được.
+      summary: Xem chi tiết đơn hàng
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: integer
+        description: ID của đơn hàng
+        required: true
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderNotFound'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSystemError'
+          description: ''
+  /api/orders/my-shop/:
+    get:
+      operationId: orders_my_shop_list
+      description: Dành cho người bán. Trả về danh sách các sản phẩm mà khách đã đặt
+        từ Shop của bạn.
+      summary: Lấy đơn hàng của Shop (Kênh người bán)
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShopOrderDetail'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopNotFound'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopSystemError'
+          description: ''
+  /api/payment/cod/:
+    post:
+      operationId: payment_cod_create
+      description: Xác nhận phương thức thanh toán khi nhận hàng (Cash On Delivery).
+        Hệ thống sẽ chuyển trạng thái thanh toán của các sản phẩm trong đơn hàng sang
+        'Pending'.
+      summary: Xác nhận thanh toán COD
+      tags:
+      - payment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CODSerializers'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CODSerializers'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CODSerializers'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CODSuccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CODErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CODNotFoundResponse'
+          description: ''
+  /api/payment/vnpay/create-payment-url/:
+    post:
+      operationId: payment_vnpay_create_payment_url_create
+      description: Gửi thông tin đơn hàng (ID, số tiền) để nhận về đường link chuyển
+        hướng sang cổng thanh toán VNPAY.
+      summary: Tạo URL thanh toán VNPAY
+      tags:
+      - payment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePayment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreatePayment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreatePayment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VNPAYUrlResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VNPAYCreateError'
+          description: ''
+  /api/payment/vnpay/ipn/:
+    get:
+      operationId: payment_vnpay_ipn_retrieve
+      description: API này chỉ dành cho Server VNPAY gọi tự động để cập nhật trạng
+        thái đơn hàng (Pending -> Paid). Người dùng không gọi trực tiếp.
+      summary: IPN (Webhook từ VNPAY)
+      parameters:
+      - in: query
+        name: vnp_Amount
+        schema:
+          type: string
+        description: Số tiền (đã nhân 100)
+        required: true
+      - in: query
+        name: vnp_ResponseCode
+        schema:
+          type: string
+        description: Mã phản hồi (00 là thành công)
+        required: true
+      - in: query
+        name: vnp_SecureHash
+        schema:
+          type: string
+        description: Mã kiểm tra toàn vẹn
+        required: true
+      - in: query
+        name: vnp_TxnRef
+        schema:
+          type: string
+        description: Mã đơn hàng (Order ID)
+        required: true
+      tags:
+      - payment
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPNResponse'
+          description: ''
+  /api/payment/vnpay/query/:
+    post:
+      operationId: payment_vnpay_query_create
+      description: Chủ động hỏi VNPAY xem giao dịch này đã thành công chưa (Dùng để
+        đối soát hoặc khi IPN bị lỗi).
+      summary: Truy vấn trạng thái giao dịch (QueryDR)
+      tags:
+      - payment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VNPAYQueryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VNPAYQueryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VNPAYQueryRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/payment/vnpay/return/:
+    get:
+      operationId: payment_vnpay_return_retrieve
+      description: Frontend gọi API này sau khi user được redirect từ VNPAY về, để
+        xác thực lại checksum và hiển thị kết quả.
+      summary: VNPAY Return URL
+      parameters:
+      - in: query
+        name: vnp_ResponseCode
+        schema:
+          type: string
+        description: '00: Thành công'
+      - in: query
+        name: vnp_SecureHash
+        schema:
+          type: string
+        description: Checksum
+      - in: query
+        name: vnp_TxnRef
+        schema:
+          type: string
+        description: Mã đơn hàng
+      tags:
+      - payment
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnSuccess'
+          description: ''
+  /api/products/public/{product_id}/:
+    get:
+      operationId: products_public_retrieve
+      description: Lấy thông tin chi tiết (bao gồm variants, images, shop) của một
+        sản phẩm.
+      summary: Xem chi tiết sản phẩm
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        description: ID của sản phẩm cần xem
+        required: true
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductNotFound'
+          description: ''
+  /api/products/public/flash-sale/:
+    get:
+      operationId: products_public_flash_sale_list
+      description: Lấy danh sách các sản phẩm đang giảm giá sâu (Discount >= 50%).
+      summary: Sản phẩm Flash Sale
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
+  /api/products/public/list/:
+    get:
+      operationId: products_public_list_list
+      description: Trả về danh sách toàn bộ sản phẩm, sắp xếp mới nhất lên đầu.
+      summary: Lấy danh sách tất cả sản phẩm
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
+  /api/products/public/recommend/:
+    get:
+      operationId: products_public_recommend_list
+      description: "\n    Gợi ý sản phẩm thông minh:\n    - **Đã đăng nhập:** Ưu tiên
+        hiển thị sản phẩm thuộc Category mà User hay mua nhất.\n    - **Chưa đăng
+        nhập:** Hiển thị sản phẩm mới nhất.\n    "
+      summary: Gợi ý sản phẩm (Recommend)
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
+  /api/products/public/trendy/:
+    get:
+      operationId: products_public_trendy_list
+      description: Trả về danh sách 10 sản phẩm có số lượng bán cao nhất trong 7 ngày
+        qua.
+      summary: Top sản phẩm bán chạy (Trendy)
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
+  /api/products/seller/my-products/:
+    get:
+      operationId: products_seller_my_products_list
+      description: API dành cho người bán. Trả về tất cả sản phẩm thuộc Shop của User
+        đang đăng nhập.
+      summary: Lấy danh sách sản phẩm của Shop
+      tags:
+      - products
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
+    post:
+      operationId: products_seller_my_products_create
+      description: 'Người bán tạo sản phẩm mới kèm theo Variants và Images (Hỗ trợ
+        Multipart/Form-data). Với , variant là 1 list gồm {"price": 150000,"quantity":
+        50,"attributes": {"color": "White", "type": "S"}, các trường attributes là
+        người dùng nhập'
+      summary: Tạo sản phẩm mới
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Product'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductCreateError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopError'
+          description: ''
+  /api/products/seller/my-products/{product_id}/:
+    get:
+      operationId: products_seller_my_products_retrieve
+      description: Người bán xem chi tiết một sản phẩm do mình tạo ra.
+      summary: Xem chi tiết sản phẩm của Shop
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - products
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SellerProductNotFound'
+          description: ''
+    put:
+      operationId: products_seller_my_products_update
+      description: Cập nhật thông tin sản phẩm (Partial update cho phép cập nhật từng
+        trường).
+      summary: Cập nhật sản phẩm
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Product'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateError'
+          description: ''
+    delete:
+      operationId: products_seller_my_products_destroy
+      description: Xóa sản phẩm khỏi hệ thống (Chỉ chủ sở hữu mới xóa được).
+      summary: Xóa sản phẩm
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - products
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSuccess'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteError'
+          description: ''
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/shops/my-shop/:
+    get:
+      operationId: shops_my_shop_retrieve
+      description: Trả về thông tin chi tiết Shop của User đang đăng nhập.
+      summary: Lấy thông tin shop của tôi
+      tags:
+      - shops
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shop'
+          description: ''
+    post:
+      operationId: shops_my_shop_create
+      description: Đăng ký mở Shop bán hàng. Mỗi User chỉ được tạo duy nhất 1 Shop.
+      summary: Đăng ký shop mới
+      tags:
+      - shops
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShopRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ShopRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShopRegister'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shop'
+          description: ''
+    put:
+      operationId: shops_my_shop_update
+      description: Cho phép User chỉnh sửa thông tin Shop (Tên, mô tả, địa chỉ...).
+      summary: Cập nhật thông tin shop
+      tags:
+      - shops
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeShopInfo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangeShopInfo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangeShopInfo'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shop'
+          description: ''
+  /api/users/me/:
+    get:
+      operationId: users_me_retrieve
+      description: Trả về thông tin chi tiết của người dùng đang đăng nhập dựa trên
+        Token gửi kèm.
+      summary: Lấy thông tin cá nhân (Profile)
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: users_me_update
+      description: Cho phép cập nhật một phần thông tin (username,...). Chỉ cần gửi
+        các trường muốn thay đổi.
+      summary: Cập nhật thông tin cá nhân
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateProfileError'
+          description: ''
+components:
+  schemas:
+    CODErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          default: Thanh toán COD không thành công
+    CODNotFoundResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          default: Order not found
+    CODSerializers:
+      type: object
+      properties:
+        order_id:
+          type: string
+          description: Mã đơn hàng unique
+    CODSuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          default: Thanh toán COD thành công
+    Category:
+      type: object
+      properties:
+        category_id:
+          type: integer
+        category_name:
+          type: string
+          maxLength: 45
+      required:
+      - category_id
+      - category_name
+    ChangeShopInfo:
+      type: object
+      properties:
+        shop_name:
+          type: string
+      required:
+      - shop_name
+    CreatePayment:
+      type: object
+      properties:
+        amount:
+          type: integer
+          description: Số tiền (VND)
+        order_desc:
+          type: string
+          default: ''
+          description: Nội dung thanh toán
+        bank_code:
+          type: string
+          description: Mã ngân hàng (NCB, VCB...)
+        language:
+          type: string
+          default: vn
+          description: Ngôn ngữ (vn/en)
+        order_id:
+          type: string
+          description: Mã đơn hàng unique
+      required:
+      - amount
+    DeleteError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    DeleteSuccess:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    EmailServiceError:
+      type: object
+      properties:
+        error:
+          type: string
+          default: Error sending email...
+    Feedback:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rating:
+          allOf:
+          - $ref: '#/components/schemas/RatingEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        review:
+          type: string
+        user_name:
+          type: string
+          readOnly: true
+        user_id:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - rating
+      - review
+      - user_id
+      - user_name
+    FeedbackError:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    FeedbackSuccess:
+      type: object
+      properties:
+        message:
+          type: string
+          default: Cảm ơn bạn! Đánh giá của bạn đã được gửi.
+    ForgotPasswordError:
+      type: object
+      properties:
+        error:
+          type: string
+          default: Please enter email
+    ForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Nhập email tài khoản cần khôi phục
+      required:
+      - email
+    ForgotPasswordSuccess:
+      type: object
+      properties:
+        message:
+          type: string
+          default: OTP code has been sent to your email.
+    IPNResponse:
+      type: object
+      properties:
+        RspCode:
+          type: string
+        Message:
+          type: string
+      required:
+      - Message
+      - RspCode
+    LoginFailResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          readOnly: true
+          default: Fail to login
+      required:
+      - error
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          default: example@gmail.com
+        password:
+          type: string
+          writeOnly: true
+          default: '12345678'
+    LoginSuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          readOnly: true
+          default: Successfully login
+      required:
+      - message
+    NewFeedback:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        review:
+          type: string
+      required:
+      - rating
+      - review
+    NewOrder:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NewOrderDetail'
+          writeOnly: true
+      required:
+      - items
+    NewOrderDetail:
+      type: object
+      properties:
+        product_id:
+          type: integer
+        variant_id:
+          type: integer
+          nullable: true
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+      - product_id
+      - quantity
+    NoOrderFound:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+        total_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderDetail'
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - items
+      - total_price
+      - user
+    OrderCreateError:
+      type: object
+      properties:
+        message:
+          type: string
+        error_detail:
+          type: string
+      required:
+      - error_detail
+      - message
+    OrderDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        order:
+          type: integer
+        product:
+          type: integer
+        shop:
+          type: integer
+        order_status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+      required:
+      - id
+      - order
+      - price
+      - product
+      - quantity
+      - shop
+    OrderNotFound:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    OrderSimple:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        total_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        user:
+          type: integer
+      required:
+      - created_at
+      - id
+      - total_price
+      - user
+    OrderStatusEnum:
+      enum:
+      - pending
+      - confirmed
+      - shipped
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `confirmed` - Confirmed
+        * `shipped` - Shipped
+    OrderSystemError:
+      type: object
+      properties:
+        message:
+          type: string
+        details:
+          type: string
+      required:
+      - details
+      - message
+    PaymentStatusEnum:
+      enum:
+      - paid
+      - pending
+      type: string
+      description: |-
+        * `paid` - Paid
+        * `pending` - Pending
+    Product:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          readOnly: true
+        product_name:
+          type: string
+          maxLength: 250
+        description:
+          type: string
+        base_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        discount:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        category:
+          type: integer
+        shop:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+          readOnly: true
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductVariant'
+          readOnly: true
+        uploaded_images:
+          type: array
+          items:
+            type: string
+          writeOnly: true
+        variants_input:
+          writeOnly: true
+      required:
+      - category
+      - created_at
+      - description
+      - images
+      - product_id
+      - product_name
+      - shop
+      - updated_at
+      - variants
+    ProductCreateError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image_url:
+          type: string
+          format: uri
+          maxLength: 500
+        file_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - id
+    ProductNotFound:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    ProductVariant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        attributes: {}
+        is_active:
+          type: boolean
+      required:
+      - id
+      - price
+    RatingEnum:
+      enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      type: integer
+      description: |-
+        * `1` - 1
+        * `2` - 2
+        * `3` - 3
+        * `4` - 4
+        * `5` - 5
+    RegisterFailResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          readOnly: true
+          default: Fail to create account
+      required:
+      - error
+    RegisterSuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          readOnly: true
+          default: Successfully created account
+      required:
+      - message
+    ResetPasswordError:
+      type: object
+      properties:
+        error:
+          type: string
+          default: Incorrect OTP code or Missing info.
+    ResetPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        otp:
+          type: string
+          description: Mã OTP 6 số nhận được từ email
+        new_password:
+          type: string
+          description: Mật khẩu mới
+          minLength: 8
+      required:
+      - email
+      - new_password
+      - otp
+    ResetPasswordSuccess:
+      type: object
+      properties:
+        message:
+          type: string
+          default: Password reset successful.
+    ReturnSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+      - message
+      - status
+    SellerProductNotFound:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    Shop:
+      type: object
+      properties:
+        shop_id:
+          type: integer
+        shop_name:
+          type: string
+          maxLength: 45
+        owner:
+          type: integer
+          readOnly: true
+      required:
+      - owner
+      - shop_id
+      - shop_name
+    ShopError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    ShopNotFound:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    ShopOrderDetail:
+      type: object
+      properties:
+        order:
+          type: integer
+        product:
+          type: integer
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        shop:
+          type: integer
+      required:
+      - order
+      - price
+      - product
+      - quantity
+      - shop
+    ShopRegister:
+      type: object
+      properties:
+        shop_name:
+          type: string
+          maxLength: 45
+      required:
+      - shop_name
+    ShopSystemError:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    StatusEnum:
+      enum:
+      - active
+      - banned
+      - pending
+      type: string
+      description: |-
+        * `active` - Active
+        * `banned` - Banned
+        * `pending` - Pending
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    UpdateError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    UpdateProfileError:
+      type: object
+      properties:
+        error:
+          type: string
+          default: Bad Request / Update Failed
+    User:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        user_name:
+          type: string
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+      required:
+      - email
+      - status
+      - user_id
+      - user_name
+    UserNotFoundReset:
+      type: object
+      properties:
+        error:
+          type: string
+          default: User does not exist.
+    UserRegister:
+      type: object
+      properties:
+        user_name:
+          type: string
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+      required:
+      - email
+      - password
+      - user_name
+    VNPAYCreateError:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    VNPAYQueryRequest:
+      type: object
+      properties:
+        order_id:
+          type: string
+          description: Mã đơn hàng đã gửi sang VNPAY
+        trans_date:
+          type: string
+          description: 'Thời gian tạo giao dịch (Format: YYYYMMDDHHmmss)'
+      required:
+      - order_id
+      - trans_date
+    VNPAYUrlResponse:
+      type: object
+      properties:
+        payment_url:
+          type: string
+          format: uri
+          description: Đường dẫn redirect sang VNPAY
+      required:
+      - payment_url
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

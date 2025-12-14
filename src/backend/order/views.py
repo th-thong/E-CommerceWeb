@@ -2,19 +2,37 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.renderers import JSONRenderer
-from http.client import HTTPResponse
 from rest_framework.response import Response
-from .serializers import OrderSerializer, OrderDetailSerializer, NewOrderSerializer, OrderSimpleSerializer, ShopOrderDetailSerializer
+from .serializers import OrderSerializer, NewOrderSerializer, OrderSimpleSerializer, ShopOrderDetailSerializer
 from rest_framework import status
-from rest_framework.views import APIView
-from django.core.exceptions import ObjectDoesNotExist
-from drf_spectacular.utils import extend_schema_view, extend_schema
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import  extend_schema, inline_serializer, OpenApiParameter
 from rest_framework import serializers
 from .models import Order, OrderDetail
 from .permissions import IsSeller
 from shop.models import Shop
 
+@extend_schema(
+    methods=['GET'],
+    summary="Lấy lịch sử mua hàng",
+    description="Trả về danh sách tóm tắt các đơn hàng mà user hiện tại đã mua.",
+    responses={
+        200: OrderSimpleSerializer(many=True),
+        404: inline_serializer(name='NoOrderFound', fields={'message': serializers.CharField()})
+    }
+)
+@extend_schema(
+    methods=['POST'],
+    summary="Tạo đơn hàng mới",
+    description="User gửi danh sách sản phẩm (items) để tạo đơn. Hệ thống sẽ trừ tồn kho và tính tổng tiền.",
+    request=NewOrderSerializer,
+    responses={
+        200: OrderSerializer, # Code của bạn đang trả về 200 khi tạo thành công
+        400: inline_serializer(
+            name='OrderCreateError',
+            fields={'message': serializers.CharField(), 'error_detail': serializers.CharField()}
+        )
+    }
+)
 @api_view(['GET','POST'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -34,7 +52,8 @@ def get_order_history(request) -> Response:
         print(e)
         return Response({'message':'Không có đơn hàng nào'}, status = status.HTTP_404_NOT_FOUND)
     return Response(OrderSimpleSerializer(order, many = True).data, status = status.HTTP_200_OK)
-    
+
+
 def create_new_order(request) -> Response:
     serializer = NewOrderSerializer(data = request.data, context={"request":request})
 
@@ -52,6 +71,30 @@ def create_new_order(request) -> Response:
     return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    summary="Xem chi tiết đơn hàng",
+    description="Lấy thông tin chi tiết một đơn hàng cụ thể. Chỉ chủ sở hữu đơn hàng mới xem được.",
+    parameters=[
+        OpenApiParameter(
+            name='order_id', 
+            description='ID của đơn hàng', 
+            required=True, 
+            type=int, 
+            location=OpenApiParameter.PATH
+        ),
+    ],
+    responses={
+        200: OrderSerializer,
+        404: inline_serializer(
+            name='OrderNotFound', 
+            fields={'message': serializers.CharField()}
+        ),
+        500: inline_serializer(
+            name='OrderSystemError', 
+            fields={'message': serializers.CharField(), 'details': serializers.CharField()}
+        )
+    }
+)
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -81,6 +124,15 @@ def get_order_detail(request, order_id):
     return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    summary="Lấy đơn hàng của Shop (Kênh người bán)",
+    description="Dành cho người bán. Trả về danh sách các sản phẩm mà khách đã đặt từ Shop của bạn.",
+    responses={
+        200: ShopOrderDetailSerializer(many=True),
+        404: inline_serializer(name='ShopNotFound', fields={'message': serializers.CharField()}),
+        500: inline_serializer(name='ShopSystemError', fields={'message': serializers.CharField()})
+    }
+)
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated, IsSeller])
