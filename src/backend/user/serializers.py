@@ -3,26 +3,38 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source='username')
-    user_id = serializers.IntegerField(source='id')
+    user_name = serializers.CharField(source='username', read_only=True)
+    user_id = serializers.IntegerField(source='id', read_only=True)
+
+    role = serializers.SerializerMethodField()
+
     class Meta:
-        model=User
-        fields=['user_id', 'user_name', 'email', 'status']
+        model = User
+        fields = ['user_id', 'user_name', 'email', 'status', 'address', 'role']
         extra_kwargs = {
             'password': {'write_only': True},
-            'id':{'read_only': True},
-            'status':{'read_only':True}
-            }
-        
+            'status': {'read_only': True},
+            'email': {'read_only': True},
+        }
+
+    def get_role(self, obj):
+        if obj.is_superuser or obj.is_staff:
+            return "Admin"
+
+        if obj.groups.filter(name='Seller').exists():
+            return "Seller"
+
+        return "Buyer"
+
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
-        
+
         instance = super().update(instance, validated_data)
-        
+
         if password:
             instance.set_password(password)
             instance.save()
-            
+
         return instance
 
 class UserRegisterSerializer(serializers.ModelSerializer):
