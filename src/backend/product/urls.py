@@ -1,5 +1,5 @@
 from django.urls import path, include
-from . import views
+from . import views, admin_views
 
 urlpatterns = [
     path('public/list/', views.get_list_of_public_product, name='public-product-list'),
