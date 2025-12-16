@@ -18,6 +18,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 @extend_schema(
+    tags=['User'],
     methods=['GET'],
     summary="Lấy thông tin cá nhân (Profile)",
     description="Trả về thông tin chi tiết của người dùng đang đăng nhập dựa trên Token gửi kèm.",
@@ -26,6 +27,7 @@ User = get_user_model()
     }
 )
 @extend_schema(
+    tags=['User'],
     methods=['PUT'],
     summary="Cập nhật thông tin cá nhân",
     description="Cho phép cập nhật một phần thông tin (username,...). Chỉ cần gửi các trường muốn thay đổi.",
@@ -61,6 +63,7 @@ def user_profile(request):
 
 
 @extend_schema(
+    tags=['Auth'],
     request=UserRegisterSerializer, 
     responses={
         201: inline_serializer(
@@ -92,6 +95,7 @@ def register(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(
+    tags=['Auth'],
     request= inline_serializer(
         name = 'LoginRequest',
         fields={
@@ -145,6 +149,7 @@ def login(request):
 class ForgotPasswordView(APIView):
     
     @extend_schema(
+        tags=['Auth'],
         # 1. Định nghĩa Input: Chỉ cần Email
         request=inline_serializer(
             name='ForgotPasswordRequest',
@@ -207,6 +212,7 @@ class ForgotPasswordView(APIView):
 class ResetPasswordView(APIView):
     
     @extend_schema(
+        tags=['Auth'],
         # 1. Định nghĩa Input: Cần Email, OTP và Mật khẩu mới
         request=inline_serializer(
             name='ResetPasswordRequest',

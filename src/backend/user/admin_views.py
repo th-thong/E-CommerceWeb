@@ -13,6 +13,11 @@ from rest_framework import serializers
 from rest_framework.permissions import IsAdminUser
 import json
 
+@extend_schema(
+    tags=['Admin - User'],
+    summary="Lấy danh sách tất cả người dùng (customer)",
+    responses={200: UserSerializer(many=True)}
+)
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAdminUser]) 
@@ -26,6 +31,40 @@ def get_users(request):
         return Response({"error":str(e)}, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Admin - User'],
+    methods=['GET'],
+    summary="Lấy chi tiết một người dùng",
+    parameters=[
+        OpenApiParameter(name='user_id', type=int, location=OpenApiParameter.PATH, required=True)
+    ],
+    responses={200: UserSerializer}
+)
+@extend_schema(
+    tags=['Admin - User'],
+    methods=['PUT'],
+    summary="Cập nhật vai trò/trạng thái người dùng",
+    parameters=[
+        OpenApiParameter(name='user_id', type=int, location=OpenApiParameter.PATH, required=True)
+    ],
+    request=inline_serializer(
+        name='UpdateUserRequest',
+        fields={
+            'role': serializers.CharField(required=False, help_text="seller"),
+            'status': serializers.CharField(required=False, help_text="active, pending, banned")
+        }
+    ),
+    responses={200: UserSerializer}
+)
+@extend_schema(
+    tags=['Admin - User'],
+    methods=['DELETE'],
+    summary="Xóa một người dùng",
+    parameters=[
+        OpenApiParameter(name='user_id', type=int, location=OpenApiParameter.PATH, required=True)
+    ],
+    responses={204: None}
+)
 @api_view(['GET','PUT','DELETE'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAdminUser]) 
@@ -75,6 +114,11 @@ def delete_user(request, user_id):
         return Response({"error":str(e)}, status=status.HTTP_200_OK)
     
 
+@extend_schema(
+    tags=['Admin - User'],
+    summary="Lấy danh sách người dùng đang chờ duyệt thành người bán",
+    responses={200: UserSerializer(many=True)}
+)
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAdminUser]) 

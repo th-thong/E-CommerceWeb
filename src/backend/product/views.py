@@ -26,6 +26,7 @@ PRODUCT_NOT_FOUND_MSG = {"error": "Product not found or you do not have permissi
 # ============================================================================
 
 @extend_schema(
+    tags=['Product'],
     responses={200: ProductSerializer(many=True)},
     summary="Lấy danh sách tất cả sản phẩm",
     description="Trả về danh sách toàn bộ sản phẩm, sắp xếp mới nhất lên đầu."
@@ -44,6 +45,7 @@ def get_list_of_public_product(request):
 
 
 @extend_schema(
+    tags=['Product'],
     parameters=[
         OpenApiParameter(
             name='product_id', 
@@ -78,6 +80,7 @@ def get_public_product_detail(request, product_id):
 
 
 @extend_schema(
+    tags=['Product'],
     responses={200: ProductSerializer(many=True)},
     summary="Top sản phẩm bán chạy (Trendy)",
     description="Trả về danh sách 10 sản phẩm có số lượng bán cao nhất trong 7 ngày qua."
@@ -105,6 +108,7 @@ def get_trendy_product(request):
 
 
 @extend_schema(
+    tags=['Product'],
     responses={200: ProductSerializer(many=True)},
     summary="Sản phẩm Flash Sale",
     description="Lấy danh sách các sản phẩm đang giảm giá sâu (Discount >= 50%)."
@@ -125,6 +129,7 @@ def get_flashsale_product(request):
 
 
 @extend_schema(
+    tags=['Product'],
     responses={200: ProductSerializer(many=True)},
     summary="Gợi ý sản phẩm (Recommend)",
     description="""
@@ -189,6 +194,7 @@ class SellerProductListCreateView(APIView):
             return None
 
     @extend_schema(
+        tags=['Product'],
         responses={200: ProductSerializer(many=True)},
         summary="Lấy danh sách sản phẩm của Shop",
         description="API dành cho người bán. Trả về tất cả sản phẩm thuộc Shop của User đang đăng nhập."
@@ -203,6 +209,7 @@ class SellerProductListCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     @extend_schema(
+        tags=['Product'],
         request=ProductSerializer,
         responses={
             201: ProductSerializer,
@@ -254,6 +261,7 @@ class SellerProductDetailView(APIView):
             return None
 
     @extend_schema(
+        tags=['Product'],
         summary="Xem chi tiết sản phẩm của Shop",
         description="Người bán xem chi tiết một sản phẩm do mình tạo ra.",
         responses={
@@ -270,6 +278,7 @@ class SellerProductDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
+        tags=['Product'],
         request=ProductSerializer,
         summary="Cập nhật sản phẩm",
         description="Cập nhật thông tin sản phẩm (Partial update cho phép cập nhật từng trường).",
@@ -299,6 +308,7 @@ class SellerProductDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
+        tags=['Product'],
         summary="Xóa sản phẩm",
         description="Xóa sản phẩm khỏi hệ thống (Chỉ chủ sở hữu mới xóa được).",
         responses={

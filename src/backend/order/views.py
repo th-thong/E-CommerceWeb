@@ -12,6 +12,7 @@ from .permissions import IsSeller
 from shop.models import Shop
 
 @extend_schema(
+    tags=['Order'],
     methods=['GET'],
     summary="Lấy lịch sử mua hàng",
     description="Trả về danh sách tóm tắt các đơn hàng mà user hiện tại đã mua.",
@@ -21,6 +22,7 @@ from shop.models import Shop
     }
 )
 @extend_schema(
+    tags=['Order'],
     methods=['POST'],
     summary="Tạo đơn hàng mới",
     description="User gửi danh sách sản phẩm (items) để tạo đơn. Hệ thống sẽ trừ tồn kho và tính tổng tiền.",
@@ -72,6 +74,7 @@ def create_new_order(request) -> Response:
 
 
 @extend_schema(
+    tags=['Order'],
     summary="Xem chi tiết đơn hàng",
     description="Lấy thông tin chi tiết một đơn hàng cụ thể. Chỉ chủ sở hữu đơn hàng mới xem được.",
     parameters=[
@@ -125,6 +128,7 @@ def get_order_detail(request, order_id):
 
 
 @extend_schema(
+    tags=['Order'],
     summary="Lấy đơn hàng của Shop (Kênh người bán)",
     description="Dành cho người bán. Trả về danh sách các sản phẩm mà khách đã đặt từ Shop của bạn.",
     responses={

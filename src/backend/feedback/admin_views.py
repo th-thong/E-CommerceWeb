@@ -10,6 +10,11 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serial
 from rest_framework import serializers
 from rest_framework.permissions import IsAdminUser
 
+@extend_schema(
+    tags=['Admin - Feedback'],
+    summary="Lấy danh sách các feedback bị cấm",
+    responses={200: FeedbackSerializer(many=True)}
+)
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAdminUser]) 
@@ -23,6 +28,26 @@ def get_feedback(request, product_id):
     serializer = FeedbackSerializer(feedbacks, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@extend_schema(
+    tags=['Admin - Feedback'],
+    summary="Chấp thuận feedback",
+    parameters=[
+        OpenApiParameter(
+            name='feedback_id',
+            type=int,
+            location=OpenApiParameter.PATH,
+            description='ID của feedback',
+            required=True
+        )
+    ],
+    responses={
+        200: FeedbackSerializer,
+        400: inline_serializer(
+            name='ApproveFeedbackError',
+            fields={'error': serializers.CharField()}
+        )
+    }
+)
 @api_view(['PUT'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAdminUser]) 
@@ -34,4 +59,4 @@ def approve_feedback(request, feedback_id):
         serializer = FeedbackSerializer(feedback)
         return Response(serializer.data, status = status.HTTP_200_OK)
     except Exception as e:
-        return Response({"error":str(e)}, status=status.HTTP_200_OK)
+        return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
