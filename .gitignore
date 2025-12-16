@@ -1,6 +1,7 @@
 # Bí mật
 *.env
-
+.vite
+node_modules
 # File tạm
 temp
 *.log
