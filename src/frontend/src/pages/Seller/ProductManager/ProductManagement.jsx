@@ -2,7 +2,7 @@
 
 import "./section.css"
 import { useState, useEffect } from "react"
-import { createSellerProduct } from "@/api/products"
+import { createSellerProduct, fetchPrivateProducts } from "@/api/products"
 import { fetchCategories } from "@/api/categories"
 
 const TOKEN_KEY = "auth_tokens"
@@ -16,6 +16,7 @@ const ProductManagement = () => {
   const [selectedProducts, setSelectedProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(false)
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [productForm, setProductForm] = useState({
     product_name: "",
@@ -47,18 +48,47 @@ const ProductManagement = () => {
     discount: 0,
   })
 
-  const [products, setProducts] = useState([
-    { id: 1, name: "Áo thun nam casual", price: 150000, status: "Đang bán", promoted: false },
-    { id: 2, name: "Quần jean nam", price: 350000, status: "Đang bán", promoted: false },
-    { id: 3, name: "Giày thể thao", price: 650000, status: "Chờ duyệt", promoted: false },
-    { id: 4, name: "Áo khoác", price: 450000, status: "Chờ duyệt", promoted: false },
-  ])
+  const [products, setProducts] = useState([])
+
+  const loadProducts = async () => {
+    setIsLoadingProducts(true)
+    try {
+      const savedTokens = localStorage.getItem(TOKEN_KEY)
+      const tokens = savedTokens ? JSON.parse(savedTokens) : null
+      const accessToken = tokens?.access || null
+      if (!accessToken) {
+        setProducts([])
+        return
+      }
+      const data = await fetchPrivateProducts(accessToken)
+      const normalized = (data || []).map((item) => ({
+        id: item.id ?? item.product_id,
+        name: item.name ?? item.product_name,
+        price: item.price ?? item.base_price ?? 0,
+        status: item.status || "Đang bán",
+        promoted: false,
+      }))
+      setProducts(normalized)
+    } catch (error) {
+      console.error("Failed to load products:", error)
+      alert("Không thể tải danh sách sản phẩm")
+    } finally {
+      setIsLoadingProducts(false)
+    }
+  }
+
+  useEffect(() => {
+    loadProducts()
+  }, [])
 
   useEffect(() => {
     const loadCategories = async () => {
       setIsLoadingCategories(true)
       try {
-        const data = await fetchCategories()
+        const savedTokens = localStorage.getItem(TOKEN_KEY)
+        const tokens = savedTokens ? JSON.parse(savedTokens) : null
+        const accessToken = tokens?.access || null
+        const data = await fetchCategories(accessToken)
         setCategories(data || [])
       } catch (error) {
         console.error("Failed to load categories:", error)
@@ -262,7 +292,8 @@ const ProductManagement = () => {
       await createSellerProduct(formData, tokens.access)
       alert("Thêm sản phẩm thành công!")
       resetProductForm()
-      // Optionally refresh the products list here
+      // Refresh danh sách sản phẩm sau khi tạo mới
+      await loadProducts()
     } catch (error) {
       console.error("Error creating product:", error)
       alert(`Lỗi khi thêm sản phẩm: ${error.message || "Vui lòng thử lại"}`)
@@ -466,8 +497,8 @@ const ProductManagement = () => {
                 >
                   <option value="">Chọn danh mục</option>
                   {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
+                    <option key={cat.category_id} value={cat.category_id}>
+                      {cat.category_name}
                     </option>
                   ))}
                 </select>
