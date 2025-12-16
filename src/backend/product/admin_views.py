@@ -11,6 +11,11 @@ from rest_framework import serializers
 from rest_framework.permissions import IsAdminUser
 
 
+@extend_schema(
+    tags=['Admin - Product'],
+    summary="Lấy danh sách sản phẩm chờ duyệt",
+    responses={200: ProductSerializer(many=True)}
+)
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAdminUser]) 
@@ -23,6 +28,24 @@ def get_products(request):
     except Exception as e:
         return Response({"error":str(e)}, status=status.HTTP_200_OK)
     
+@extend_schema(
+    tags=['Admin - Product'],
+    methods=['GET'],
+    summary="Lấy chi tiết sản phẩm chờ duyệt",
+    parameters=[
+        OpenApiParameter(name='product_id', type=int, location=OpenApiParameter.PATH, required=True)
+    ],
+    responses={200: ProductSerializer}
+)
+@extend_schema(
+    tags=['Admin - Product'],
+    methods=['PUT'],
+    summary="Duyệt sản phẩm",
+    parameters=[
+        OpenApiParameter(name='product_id', type=int, location=OpenApiParameter.PATH, required=True)
+    ],
+    responses={200: ProductSerializer}
+)
 @api_view(['GET','PUT'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAdminUser]) 

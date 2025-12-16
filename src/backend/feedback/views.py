@@ -10,6 +10,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serial
 from rest_framework import serializers
 
 @extend_schema(
+    tags=['Feedback'],
     methods=['GET'],
     summary="Xem danh sách đánh giá",
     description="Lấy danh sách các đánh giá đã được duyệt (status='normal') của một sản phẩm cụ thể.",
@@ -27,6 +28,7 @@ from rest_framework import serializers
     }
 )
 @extend_schema(
+    tags=['Feedback'],
     methods=['POST'],
     summary="Gửi đánh giá mới",
     description="Người dùng (đã đăng nhập) gửi đánh giá và nhận xét cho sản phẩm.",

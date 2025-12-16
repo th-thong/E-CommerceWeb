@@ -16,6 +16,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 @extend_schema(
+    tags=['Payment'],
     summary="Xác nhận thanh toán COD",
     description="Xác nhận phương thức thanh toán khi nhận hàng (Cash On Delivery). Hệ thống sẽ chuyển trạng thái thanh toán của các sản phẩm trong đơn hàng sang 'Pending'.",
     request=CODSerializers,

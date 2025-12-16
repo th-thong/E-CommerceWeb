@@ -31,6 +31,7 @@ class VNPAYCreatePaymentView(APIView):
     authentication_classes = [JWTAuthentication]
 
     @extend_schema(
+        tags=['Payment'],
         summary="Tạo URL thanh toán VNPAY",
         description="Gửi thông tin đơn hàng (ID, số tiền) để nhận về đường link chuyển hướng sang cổng thanh toán VNPAY.",
         request=CreatePaymentSerializer,
@@ -102,6 +103,7 @@ class VNPAYIPNView(APIView):
     permission_classes = [AllowAny] 
 
     @extend_schema(
+        tags=['Payment'],
         summary="IPN (Webhook từ VNPAY)",
         description="API này chỉ dành cho Server VNPAY gọi tự động để cập nhật trạng thái đơn hàng (Pending -> Paid). Người dùng không gọi trực tiếp.",
         parameters=[
@@ -177,6 +179,7 @@ class VNPAYReturnView(APIView):
     permission_classes = [AllowAny]
     
     @extend_schema(
+        tags=['Payment'],
         summary="VNPAY Return URL",
         description="Frontend gọi API này sau khi user được redirect từ VNPAY về, để xác thực lại checksum và hiển thị kết quả.",
         parameters=[
@@ -226,6 +229,7 @@ class VNPAYQueryView(APIView):
     permission_classes = [IsAuthenticated]
     
     @extend_schema(
+        tags=['Payment'],
         summary="Truy vấn trạng thái giao dịch (QueryDR)",
         description="Chủ động hỏi VNPAY xem giao dịch này đã thành công chưa (Dùng để đối soát hoặc khi IPN bị lỗi).",
         request=inline_serializer(
