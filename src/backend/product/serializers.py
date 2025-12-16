@@ -58,22 +58,10 @@ class ProductSerializer(serializers.ModelSerializer):
         if not variants_data:
              raise serializers.ValidationError({"variants_input": "Phải có ít nhất 1 biến thể sản phẩm."})
 
-        # Kiểm tra trùng lặp SKU trước khi tạo
         for index, variant in enumerate(variants_data):
-            sku_to_check = variant.get('sku')
-            
             # Kiểm tra thiếu trường
-            if not sku_to_check:
-                raise serializers.ValidationError({f"variants_input[{index}]": "Thiếu trường 'sku'."})
             if 'price' not in variant:
                 raise serializers.ValidationError({f"variants_input[{index}]": "Thiếu trường 'price'."})
-
-            # Kiểm tra SKU đã tồn tại trong DB chưa
-            if ProductVariant.objects.filter(sku=sku_to_check).exists():
-                raise serializers.ValidationError({
-                    f"variants_input[{index}][sku]": f"Mã SKU '{sku_to_check}' đã tồn tại. Vui lòng chọn mã khác."
-                })
-        # -----------------------------------
 
         # --- 2. TẠO DỮ LIỆU (Khi đã qua bài kiểm tra) ---
         product = Product.objects.create(**validated_data)
