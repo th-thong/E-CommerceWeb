@@ -5,12 +5,12 @@ info:
 paths:
   /api/auth/forgot-password/:
     post:
-      operationId: auth_forgot_password_create
+      operationId: api_auth_forgot_password_create
       description: Người dùng nhập Email. Hệ thống sẽ kiểm tra và gửi mã OTP (6 số)
         về email nếu tồn tại. OTP có hiệu lực 5 phút.
       summary: Quên mật khẩu (Gửi OTP)
       tags:
-      - auth
+      - Auth
       requestBody:
         content:
           application/json:
@@ -48,10 +48,10 @@ paths:
           description: ''
   /api/auth/login/:
     post:
-      operationId: auth_login_create
+      operationId: api_auth_login_create
       summary: Đăng nhập
       tags:
-      - auth
+      - Auth
       requestBody:
         content:
           application/json:
@@ -82,12 +82,12 @@ paths:
           description: ''
   /api/auth/refresh/:
     post:
-      operationId: auth_refresh_create
+      operationId: api_auth_refresh_create
       description: |-
         Takes a refresh type JSON web token and returns an access type JSON web
         token if the refresh token is valid.
       tags:
-      - auth
+      - api
       requestBody:
         content:
           application/json:
@@ -109,10 +109,10 @@ paths:
           description: ''
   /api/auth/register/:
     post:
-      operationId: auth_register_create
+      operationId: api_auth_register_create
       summary: Đăng kí tài khoản
       tags:
-      - auth
+      - Auth
       requestBody:
         content:
           application/json:
@@ -144,12 +144,12 @@ paths:
           description: ''
   /api/auth/reset-password/:
     post:
-      operationId: auth_reset_password_create
+      operationId: api_auth_reset_password_create
       description: Người dùng gửi Email + OTP + Mật khẩu mới. Hệ thống kiểm tra OTP
         trong Cache, nếu đúng sẽ đổi mật khẩu.
       summary: Xác thực OTP & Đổi mật khẩu
       tags:
-      - auth
+      - Auth
       requestBody:
         content:
           application/json:
@@ -187,11 +187,11 @@ paths:
           description: ''
   /api/categories/:
     get:
-      operationId: categories_list
+      operationId: api_categories_list
       description: API trả về toàn bộ danh mục sản phẩm có trong hệ thống.
       summary: Lấy danh sách danh mục
       tags:
-      - categories
+      - Category
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -207,7 +207,7 @@ paths:
           description: ''
   /api/feedback/{product_id}/:
     get:
-      operationId: feedback_list
+      operationId: api_feedback_list
       description: Lấy danh sách các đánh giá đã được duyệt (status='normal') của
         một sản phẩm cụ thể.
       summary: Xem danh sách đánh giá
@@ -219,7 +219,7 @@ paths:
         description: ID của sản phẩm cần xem đánh giá
         required: true
       tags:
-      - feedback
+      - Feedback
       security:
       - jwtAuth: []
       - {}
@@ -233,7 +233,7 @@ paths:
                   $ref: '#/components/schemas/Feedback'
           description: ''
     post:
-      operationId: feedback_create
+      operationId: api_feedback_create
       description: Người dùng (đã đăng nhập) gửi đánh giá và nhận xét cho sản phẩm.
       summary: Gửi đánh giá mới
       parameters:
@@ -244,7 +244,7 @@ paths:
         description: ID của sản phẩm muốn đánh giá
         required: true
       tags:
-      - feedback
+      - Feedback
       requestBody:
         content:
           application/json:
@@ -274,11 +274,11 @@ paths:
           description: ''
   /api/orders/:
     get:
-      operationId: orders_list
+      operationId: api_orders_list
       description: Trả về danh sách tóm tắt các đơn hàng mà user hiện tại đã mua.
       summary: Lấy lịch sử mua hàng
       tags:
-      - orders
+      - Order
       security:
       - jwtAuth: []
       responses:
@@ -297,12 +297,12 @@ paths:
                 $ref: '#/components/schemas/NoOrderFound'
           description: ''
     post:
-      operationId: orders_create
+      operationId: api_orders_create
       description: User gửi danh sách sản phẩm (items) để tạo đơn. Hệ thống sẽ trừ
         tồn kho và tính tổng tiền.
       summary: Tạo đơn hàng mới
       tags:
-      - orders
+      - Order
       requestBody:
         content:
           application/json:
@@ -332,7 +332,7 @@ paths:
           description: ''
   /api/orders/{order_id}/:
     get:
-      operationId: orders_retrieve
+      operationId: api_orders_retrieve
       description: Lấy thông tin chi tiết một đơn hàng cụ thể. Chỉ chủ sở hữu đơn
         hàng mới xem được.
       summary: Xem chi tiết đơn hàng
@@ -344,7 +344,7 @@ paths:
         description: ID của đơn hàng
         required: true
       tags:
-      - orders
+      - Order
       security:
       - jwtAuth: []
       responses:
@@ -368,12 +368,12 @@ paths:
           description: ''
   /api/orders/my-shop/:
     get:
-      operationId: orders_my_shop_list
+      operationId: api_orders_my_shop_list
       description: Dành cho người bán. Trả về danh sách các sản phẩm mà khách đã đặt
         từ Shop của bạn.
       summary: Lấy đơn hàng của Shop (Kênh người bán)
       tags:
-      - orders
+      - Order
       security:
       - jwtAuth: []
       responses:
@@ -399,13 +399,13 @@ paths:
           description: ''
   /api/payment/cod/:
     post:
-      operationId: payment_cod_create
+      operationId: api_payment_cod_create
       description: Xác nhận phương thức thanh toán khi nhận hàng (Cash On Delivery).
         Hệ thống sẽ chuyển trạng thái thanh toán của các sản phẩm trong đơn hàng sang
         'Pending'.
       summary: Xác nhận thanh toán COD
       tags:
-      - payment
+      - Payment
       requestBody:
         content:
           application/json:
@@ -440,12 +440,12 @@ paths:
           description: ''
   /api/payment/vnpay/create-payment-url/:
     post:
-      operationId: payment_vnpay_create_payment_url_create
+      operationId: api_payment_vnpay_create_payment_url_create
       description: Gửi thông tin đơn hàng (ID, số tiền) để nhận về đường link chuyển
         hướng sang cổng thanh toán VNPAY.
       summary: Tạo URL thanh toán VNPAY
       tags:
-      - payment
+      - Payment
       requestBody:
         content:
           application/json:
@@ -475,7 +475,7 @@ paths:
           description: ''
   /api/payment/vnpay/ipn/:
     get:
-      operationId: payment_vnpay_ipn_retrieve
+      operationId: api_payment_vnpay_ipn_retrieve
       description: API này chỉ dành cho Server VNPAY gọi tự động để cập nhật trạng
         thái đơn hàng (Pending -> Paid). Người dùng không gọi trực tiếp.
       summary: IPN (Webhook từ VNPAY)
@@ -505,7 +505,7 @@ paths:
         description: Mã đơn hàng (Order ID)
         required: true
       tags:
-      - payment
+      - Payment
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -519,12 +519,12 @@ paths:
           description: ''
   /api/payment/vnpay/query/:
     post:
-      operationId: payment_vnpay_query_create
+      operationId: api_payment_vnpay_query_create
       description: Chủ động hỏi VNPAY xem giao dịch này đã thành công chưa (Dùng để
         đối soát hoặc khi IPN bị lỗi).
       summary: Truy vấn trạng thái giao dịch (QueryDR)
       tags:
-      - payment
+      - Payment
       requestBody:
         content:
           application/json:
@@ -550,7 +550,7 @@ paths:
           description: ''
   /api/payment/vnpay/return/:
     get:
-      operationId: payment_vnpay_return_retrieve
+      operationId: api_payment_vnpay_return_retrieve
       description: Frontend gọi API này sau khi user được redirect từ VNPAY về, để
         xác thực lại checksum và hiển thị kết quả.
       summary: VNPAY Return URL
@@ -571,7 +571,7 @@ paths:
           type: string
         description: Mã đơn hàng
       tags:
-      - payment
+      - Payment
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -585,7 +585,7 @@ paths:
           description: ''
   /api/products/public/{product_id}/:
     get:
-      operationId: products_public_retrieve
+      operationId: api_products_public_retrieve
       description: Lấy thông tin chi tiết (bao gồm variants, images, shop) của một
         sản phẩm.
       summary: Xem chi tiết sản phẩm
@@ -597,7 +597,7 @@ paths:
         description: ID của sản phẩm cần xem
         required: true
       tags:
-      - products
+      - Product
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -617,11 +617,11 @@ paths:
           description: ''
   /api/products/public/flash-sale/:
     get:
-      operationId: products_public_flash_sale_list
+      operationId: api_products_public_flash_sale_list
       description: Lấy danh sách các sản phẩm đang giảm giá sâu (Discount >= 50%).
       summary: Sản phẩm Flash Sale
       tags:
-      - products
+      - Product
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -637,11 +637,11 @@ paths:
           description: ''
   /api/products/public/list/:
     get:
-      operationId: products_public_list_list
+      operationId: api_products_public_list_list
       description: Trả về danh sách toàn bộ sản phẩm, sắp xếp mới nhất lên đầu.
       summary: Lấy danh sách tất cả sản phẩm
       tags:
-      - products
+      - Product
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -657,13 +657,13 @@ paths:
           description: ''
   /api/products/public/recommend/:
     get:
-      operationId: products_public_recommend_list
+      operationId: api_products_public_recommend_list
       description: "\n    Gợi ý sản phẩm thông minh:\n    - **Đã đăng nhập:** Ưu tiên
         hiển thị sản phẩm thuộc Category mà User hay mua nhất.\n    - **Chưa đăng
         nhập:** Hiển thị sản phẩm mới nhất.\n    "
       summary: Gợi ý sản phẩm (Recommend)
       tags:
-      - products
+      - Product
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -679,12 +679,12 @@ paths:
           description: ''
   /api/products/public/trendy/:
     get:
-      operationId: products_public_trendy_list
+      operationId: api_products_public_trendy_list
       description: Trả về danh sách 10 sản phẩm có số lượng bán cao nhất trong 7 ngày
         qua.
       summary: Top sản phẩm bán chạy (Trendy)
       tags:
-      - products
+      - Product
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -700,12 +700,12 @@ paths:
           description: ''
   /api/products/seller/my-products/:
     get:
-      operationId: products_seller_my_products_list
+      operationId: api_products_seller_my_products_list
       description: API dành cho người bán. Trả về tất cả sản phẩm thuộc Shop của User
         đang đăng nhập.
       summary: Lấy danh sách sản phẩm của Shop
       tags:
-      - products
+      - Product
       security:
       - jwtAuth: []
       responses:
@@ -718,14 +718,14 @@ paths:
                   $ref: '#/components/schemas/Product'
           description: ''
     post:
-      operationId: products_seller_my_products_create
+      operationId: api_products_seller_my_products_create
       description: 'Người bán tạo sản phẩm mới kèm theo Variants và Images (Hỗ trợ
         Multipart/Form-data). Với , variant là 1 list gồm {"price": 150000,"quantity":
         50,"attributes": {"color": "White", "type": "S"}, các trường attributes là
         người dùng nhập'
       summary: Tạo sản phẩm mới
       tags:
-      - products
+      - Product
       requestBody:
         content:
           application/json:
@@ -761,7 +761,7 @@ paths:
           description: ''
   /api/products/seller/my-products/{product_id}/:
     get:
-      operationId: products_seller_my_products_retrieve
+      operationId: api_products_seller_my_products_retrieve
       description: Người bán xem chi tiết một sản phẩm do mình tạo ra.
       summary: Xem chi tiết sản phẩm của Shop
       parameters:
@@ -771,7 +771,7 @@ paths:
           type: integer
         required: true
       tags:
-      - products
+      - Product
       security:
       - jwtAuth: []
       responses:
@@ -788,7 +788,7 @@ paths:
                 $ref: '#/components/schemas/SellerProductNotFound'
           description: ''
     put:
-      operationId: products_seller_my_products_update
+      operationId: api_products_seller_my_products_update
       description: Cập nhật thông tin sản phẩm (Partial update cho phép cập nhật từng
         trường).
       summary: Cập nhật sản phẩm
@@ -799,7 +799,7 @@ paths:
           type: integer
         required: true
       tags:
-      - products
+      - Product
       requestBody:
         content:
           application/json:
@@ -828,7 +828,7 @@ paths:
                 $ref: '#/components/schemas/UpdateError'
           description: ''
     delete:
-      operationId: products_seller_my_products_destroy
+      operationId: api_products_seller_my_products_destroy
       description: Xóa sản phẩm khỏi hệ thống (Chỉ chủ sở hữu mới xóa được).
       summary: Xóa sản phẩm
       parameters:
@@ -838,7 +838,7 @@ paths:
           type: integer
         required: true
       tags:
-      - products
+      - Product
       security:
       - jwtAuth: []
       responses:
@@ -856,7 +856,7 @@ paths:
           description: ''
   /api/schema/:
     get:
-      operationId: schema_retrieve
+      operationId: api_schema_retrieve
       description: |-
         OpenApi3 schema for this API. Format can be selected via content negotiation.
 
@@ -975,7 +975,7 @@ paths:
           - zh-hans
           - zh-hant
       tags:
-      - schema
+      - api
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -1002,11 +1002,11 @@ paths:
           description: ''
   /api/shops/my-shop/:
     get:
-      operationId: shops_my_shop_retrieve
+      operationId: api_shops_my_shop_retrieve
       description: Trả về thông tin chi tiết Shop của User đang đăng nhập.
       summary: Lấy thông tin shop của tôi
       tags:
-      - shops
+      - Shop
       security:
       - jwtAuth: []
       responses:
@@ -1017,11 +1017,11 @@ paths:
                 $ref: '#/components/schemas/Shop'
           description: ''
     post:
-      operationId: shops_my_shop_create
+      operationId: api_shops_my_shop_create
       description: Đăng ký mở Shop bán hàng. Mỗi User chỉ được tạo duy nhất 1 Shop.
       summary: Đăng ký shop mới
       tags:
-      - shops
+      - Shop
       requestBody:
         content:
           application/json:
@@ -1044,11 +1044,11 @@ paths:
                 $ref: '#/components/schemas/Shop'
           description: ''
     put:
-      operationId: shops_my_shop_update
+      operationId: api_shops_my_shop_update
       description: Cho phép User chỉnh sửa thông tin Shop (Tên, mô tả, địa chỉ...).
       summary: Cập nhật thông tin shop
       tags:
-      - shops
+      - Shop
       requestBody:
         content:
           application/json:
@@ -1072,12 +1072,12 @@ paths:
           description: ''
   /api/users/me/:
     get:
-      operationId: users_me_retrieve
+      operationId: api_users_me_retrieve
       description: Trả về thông tin chi tiết của người dùng đang đăng nhập dựa trên
         Token gửi kèm.
       summary: Lấy thông tin cá nhân (Profile)
       tags:
-      - users
+      - User
       security:
       - jwtAuth: []
       responses:
@@ -1088,12 +1088,12 @@ paths:
                 $ref: '#/components/schemas/User'
           description: ''
     put:
-      operationId: users_me_update
+      operationId: api_users_me_update
       description: Cho phép cập nhật một phần thông tin (username,...). Chỉ cần gửi
         các trường muốn thay đổi.
       summary: Cập nhật thông tin cá nhân
       tags:
-      - users
+      - User
       requestBody:
         content:
           application/json:
@@ -1105,7 +1105,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/User'
-        required: true
       security:
       - jwtAuth: []
       responses:
@@ -1121,8 +1120,226 @@ paths:
               schema:
                 $ref: '#/components/schemas/UpdateProfileError'
           description: ''
+  /shopadmin/approve-feedback/{feedback_id}/:
+    put:
+      operationId: shopadmin_approve_feedback_update
+      summary: Chấp thuận feedback
+      parameters:
+      - in: path
+        name: feedback_id
+        schema:
+          type: integer
+        description: ID của feedback
+        required: true
+      tags:
+      - Admin - Feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApproveFeedbackError'
+          description: ''
+  /shopadmin/banned-feedback/{product_id}/:
+    get:
+      operationId: shopadmin_banned_feedback_list
+      summary: Lấy danh sách các feedback bị cấm
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - Feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Feedback'
+          description: ''
+  /shopadmin/pendingusers:
+    get:
+      operationId: shopadmin_pendingusers_list
+      summary: Lấy danh sách người dùng đang chờ duyệt thành người bán
+      tags:
+      - Admin - User
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: ''
+  /shopadmin/product-list:
+    get:
+      operationId: shopadmin_product_list_list
+      summary: Lấy danh sách sản phẩm chờ duyệt
+      tags:
+      - Admin - Product
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
+  /shopadmin/product/{product_id}/:
+    get:
+      operationId: shopadmin_product_retrieve
+      summary: Lấy chi tiết sản phẩm chờ duyệt
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - Product
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: shopadmin_product_update
+      summary: Duyệt sản phẩm
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - Product
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /shopadmin/user/{user_id}/:
+    get:
+      operationId: shopadmin_user_retrieve
+      summary: Lấy chi tiết một người dùng
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - User
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: shopadmin_user_update
+      summary: Cập nhật vai trò/trạng thái người dùng
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: shopadmin_user_destroy
+      summary: Xóa một người dùng
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin - User
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /shopadmin/users:
+    get:
+      operationId: shopadmin_users_list
+      summary: Lấy danh sách tất cả người dùng (customer)
+      tags:
+      - Admin - User
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: ''
 components:
   schemas:
+    ApproveFeedbackError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
     CODErrorResponse:
       type: object
       properties:
@@ -1776,23 +1993,40 @@ components:
         error:
           type: string
           default: Bad Request / Update Failed
+    UpdateUserRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          description: seller
+        status:
+          type: string
+          description: active, pending, banned
     User:
       type: object
       properties:
         user_id:
           type: integer
+          readOnly: true
         user_name:
           type: string
+          readOnly: true
         email:
           type: string
           format: email
-          maxLength: 254
+          readOnly: true
         status:
           allOf:
           - $ref: '#/components/schemas/StatusEnum'
           readOnly: true
+        address:
+          type: string
+        role:
+          type: string
+          readOnly: true
       required:
       - email
+      - role
       - status
       - user_id
       - user_name

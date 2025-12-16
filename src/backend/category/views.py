@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema
 
 
 @extend_schema(
+    tags=['Category'],
     responses={200: CategorySerializer(many=True)},
     summary="Lấy danh sách danh mục",
     description="API trả về toàn bộ danh mục sản phẩm có trong hệ thống."

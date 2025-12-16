@@ -10,6 +10,7 @@ from drf_spectacular.utils import extend_schema_view, extend_schema, inline_seri
 from rest_framework import serializers
 
 @extend_schema_view(
+    tags=['Shop'],
     get=extend_schema(responses=ShopSerializer, summary="Lấy thông tin shop của tôi"),
     put=extend_schema(request=inline_serializer(
         name = 'ChangeShopInfo',
@@ -33,6 +34,7 @@ class ShopView(APIView):
             return None
 
     @extend_schema(
+        tags=['Shop'],
         summary="Lấy thông tin Shop của tôi",
         description="Trả về thông tin chi tiết Shop của User đang đăng nhập.",
         responses={
@@ -52,6 +54,7 @@ class ShopView(APIView):
         return Response(serializer.data)
 
     @extend_schema(
+        tags=['Shop'],
         request=ShopSerializer, 
         summary="Cập nhật thông tin Shop",
         description="Cho phép User chỉnh sửa thông tin Shop (Tên, mô tả, địa chỉ...).",
@@ -81,6 +84,7 @@ class ShopView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @extend_schema(
+        tags=['Shop'],
         request=ShopRegisterSerializer,
         summary="Đăng ký Shop mới",
         description="Đăng ký mở Shop bán hàng. Mỗi User chỉ được tạo duy nhất 1 Shop.",
