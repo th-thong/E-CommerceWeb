@@ -54,7 +54,7 @@ const Navbar = () => {
         {/* Thanh trên */}
         <div className="navbar-top">
           <div className="navbar-links">
-            <Link to="/seller">Kênh Người Bán</Link> |
+            <Link to="/admin">Kênh Admin</Link> |
             <a href="#">Trở thành Người bán ShopLiteX</a>
             <span className="social-icons">
               <i className="fab fa-facebook"></i>

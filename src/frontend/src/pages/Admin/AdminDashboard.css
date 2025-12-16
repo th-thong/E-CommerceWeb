@@ -1,0 +1,117 @@
+.admin-page {
+  min-height: 100vh;
+  padding: 120px 40px 60px;
+  color: #ffffff;
+  background: radial-gradient(circle at top, rgba(0, 178, 255, 0.18), transparent 55%),
+    radial-gradient(circle at bottom, rgba(255, 94, 0, 0.16), transparent 55%);
+  position: relative;
+  z-index: 1;
+}
+
+.admin-hero {
+  max-width: 1100px;
+  margin: 0 auto 32px;
+}
+
+.admin-hero-text h1 {
+  font-family: "Orbitron", sans-serif;
+  font-size: 2.4rem;
+  margin-bottom: 12px;
+  background: linear-gradient(45deg, var(--c2), var(--c1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.admin-hero-text p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.admin-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.admin-card {
+  background: rgba(17, 24, 38, 0.96);
+  border-radius: 18px;
+  padding: 20px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(14px);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left, rgba(0, 178, 255, 0.2), transparent 55%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.admin-card h2 {
+  position: relative;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+  color: #ffffff;
+}
+
+.admin-card p {
+  position: relative;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 10px;
+}
+
+.admin-card ul {
+  position: relative;
+  padding-left: 18px;
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.admin-card ul li {
+  margin-bottom: 6px;
+}
+
+.admin-card-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 94, 0, 0.55);
+  background: linear-gradient(45deg, rgba(255, 94, 0, 0.9), rgba(0, 178, 255, 0.9));
+  color: #ffffff;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.admin-card-button:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 0 20px rgba(255, 94, 0, 0.6);
+}
+
+@media (max-width: 768px) {
+  .admin-page {
+    padding: 100px 16px 40px;
+  }
+
+  .admin-hero-text h1 {
+    font-size: 2rem;
+  }
+}
+
+

@@ -1,0 +1,12 @@
+@import "../Sidebar/Sidebar.css";
+
+.admin-sidebar .sidebar-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  background: linear-gradient(45deg, #00b2ff, #ff5e00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+
