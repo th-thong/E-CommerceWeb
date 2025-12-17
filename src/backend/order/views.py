@@ -3,13 +3,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from .serializers import OrderSerializer, NewOrderSerializer, OrderSimpleSerializer, ShopOrderDetailSerializer
+from .serializers import OrderSerializer, NewOrderSerializer, OrderSimpleSerializer, ShopOrderDetailSerializer,OrderHistorySerializer
 from rest_framework import status
 from drf_spectacular.utils import  extend_schema, inline_serializer, OpenApiParameter
 from rest_framework import serializers
 from .models import Order, OrderDetail
 from .permissions import IsSeller
 from shop.models import Shop
+from payment.utils import create_vnpay_payment_url
+
 
 @extend_schema(
     tags=['Order'],
@@ -28,7 +30,7 @@ from shop.models import Shop
     description="User gửi danh sách sản phẩm (items) để tạo đơn. Hệ thống sẽ trừ tồn kho và tính tổng tiền.",
     request=NewOrderSerializer,
     responses={
-        200: OrderSerializer, # Code của bạn đang trả về 200 khi tạo thành công
+        200: OrderSerializer,
         400: inline_serializer(
             name='OrderCreateError',
             fields={'message': serializers.CharField(), 'error_detail': serializers.CharField()}
@@ -46,31 +48,62 @@ def order_api(request):
     elif request.method == 'POST':
         return create_new_order(request)
 
-def get_order_history(request) -> Response:
+def get_order_history(request):
     try:
-        order = Order.objects.filter(user_id=request.user.id)
-        print(order)
+        orders = Order.objects.filter(user=request.user)\
+                              .prefetch_related('items', 'items__product', 'items__variant')\
+                              .order_by('-created_at')
+
+        if not orders.exists():
+             return Response({'message': 'Bạn chưa có đơn hàng nào.', 'data': []}, status=status.HTTP_200_OK)
+
+        serializer = OrderHistorySerializer(orders, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     except Exception as e:
-        print(e)
-        return Response({'message':'Không có đơn hàng nào'}, status = status.HTTP_404_NOT_FOUND)
-    return Response(OrderSimpleSerializer(order, many = True).data, status = status.HTTP_200_OK)
+        print(f"Lỗi lấy lịch sử: {e}")
+        return Response({'message': 'Lỗi hệ thống'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def create_new_order(request) -> Response:
-    serializer = NewOrderSerializer(data = request.data, context={"request":request})
+def create_new_order(request):
+
+    serializer = NewOrderSerializer(data=request.data, context={"request": request})
 
     if serializer.is_valid():
         try:
             order = serializer.save()
-            return Response(OrderSerializer(order).data, status = status.HTTP_200_OK)
+            payment_type = serializer.validated_data.get('payment_type', 'COD')
+
+
+            if payment_type == 'VNPAY':
+                try:
+                    payment_url = create_vnpay_payment_url(order, request)
+                    return Response({
+                            "message": "Đơn hàng đã tạo. Vui lòng thanh toán.",
+                            "order_id": order.id,
+                            "payment_type": "VNPAY",
+                            "payment_url": payment_url
+                        }, status=status.HTTP_200_OK)
+                except Exception as e:
+                    return Response({"error": f"Lỗi tạo link VNPAY: {str(e)}"}, status=400)
+            
+            else:
+                return Response({
+                    "message": "Đặt hàng thành công",
+                    "order_id": order.id,
+                    "payment_type": "COD",
+                    "data": OrderSerializer(order).data
+                }, status=status.HTTP_201_CREATED)
+
         except Exception as e:
             print(f"Lỗi chi tiết: {e}")
             return Response({
                 'message': 'Tạo đơn hàng thất bại', 
-                'error_detail': str(e) 
-            }, status = status.HTTP_400_BAD_REQUEST)
+                'error_detail': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
             
-    return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(

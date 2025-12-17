@@ -23,11 +23,12 @@ class vnpay:
         hasData = ''
         seq = 0
         for key, val in inputData:
-            if seq == 1:
-                queryString = queryString + "&" + key + '=' + urllib.parse.quote_plus(str(val))
-            else:
-                seq = 1
-                queryString = key + '=' + urllib.parse.quote_plus(str(val))
+            if val:
+                if seq == 1:
+                    queryString = queryString + "&" + key + '=' + urllib.parse.quote_plus(str(val))
+                else:
+                    seq = 1
+                    queryString = key + '=' + urllib.parse.quote_plus(str(val))
 
         hashValue = self.__hmacsha512(secret_key, queryString)
         return vnpay_payment_url + "?" + queryString + '&vnp_SecureHash=' + hashValue
@@ -52,9 +53,6 @@ class vnpay:
                     seq = 1
                     hasData = str(key) + '=' + urllib.parse.quote_plus(str(val))
         hashValue = self.__hmacsha512(secret_key, hasData)
-
-        print(
-            'Validate debug, HashData:' + hasData + "\n HashValue:" + hashValue + "\nInputHash:" + vnp_SecureHash)
 
         return vnp_SecureHash == hashValue
 
