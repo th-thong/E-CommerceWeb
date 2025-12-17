@@ -2,24 +2,20 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from .serializers import ShopSerializer, ShopRegisterSerializer
+from .serializers import ShopSerializer, ShopRegisterSerializer,UpdateOrderStatusSerializer
 from rest_framework import status
 from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import extend_schema_view, extend_schema, inline_serializer
 from rest_framework import serializers
+from .permissions import IsSeller
+from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from .models import Shop
+from order.models import OrderDetail
 
-@extend_schema_view(
-    tags=['Shop'],
-    get=extend_schema(responses=ShopSerializer, summary="Lấy thông tin shop của tôi"),
-    put=extend_schema(request=inline_serializer(
-        name = 'ChangeShopInfo',
-        fields={
-            'shop_name': serializers.CharField(),
-        }
-    ), responses=ShopSerializer, summary="Cập nhật thông tin shop"),
-    post=extend_schema(request=ShopRegisterSerializer, responses=ShopSerializer, summary="Đăng ký shop mới")
-)
+
+
 class ShopView(APIView):
     renderer_classes=[JSONRenderer]
     authentication_classes=[JWTAuthentication]
@@ -114,3 +110,44 @@ class ShopView(APIView):
                 return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    
+@extend_schema(
+    tags=['Order (Seller)'],
+    summary="Cập nhật trạng thái đơn hàng",
+    description="Dành cho Shop. Cập nhật trạng thái xử lý (Pending -> Confirmed -> Shipped) hoặc thanh toán.",
+    request=UpdateOrderStatusSerializer,
+    responses={
+        200: inline_serializer(
+            name='UpdateStatusSuccess',
+            fields={'message': serializers.CharField(), 'data': UpdateOrderStatusSerializer()}
+        ),
+        403: inline_serializer(name='Forbidden', fields={'detail': serializers.CharField()}),
+        404: inline_serializer(name='NotFound', fields={'message': serializers.CharField()})
+    }
+)
+@api_view(['PATCH'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated, IsSeller])
+def update_order_status(request, detail_id):
+    try:
+        shop = Shop.objects.get(owner=request.user)
+        order_detail = OrderDetail.objects.get(id=detail_id, shop=shop)
+        
+    except Shop.DoesNotExist:
+        return Response({'message': 'Bạn chưa có Shop.'}, status=status.HTTP_403_FORBIDDEN)
+    except OrderDetail.DoesNotExist:
+        return Response({'message': 'Không tìm thấy dòng đơn hàng này hoặc không thuộc Shop của bạn.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # 2. Validate và Update
+    serializer = UpdateOrderStatusSerializer(order_detail, data=request.data, partial=True)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            'message': 'Cập nhật trạng thái thành công',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

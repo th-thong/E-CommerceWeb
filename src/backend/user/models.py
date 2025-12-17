@@ -15,7 +15,7 @@ class User(AbstractUser):
     )
     status = models.CharField(max_length=7, choices=STATUS_CHOICES, default='active')
 
-    
+
     email = models.EmailField(unique=True)
     address = models.TextField(default="None")
     

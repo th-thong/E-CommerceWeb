@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Shop
 from django.contrib.auth.models import Group
+from order.models import OrderDetail
+
 
 class ShopSerializer(serializers.ModelSerializer):
     shop_id = serializers.IntegerField(source='id')
@@ -20,3 +22,12 @@ class ShopRegisterSerializer(serializers.ModelSerializer):
         seller_group, _ = Group.objects.get_or_create(name='Seller')
         shop.owner.groups.add(seller_group)
         return shop
+    
+    
+class UpdateOrderStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderDetail
+        fields = ['order_status', 'payment_status']
+        
+    def validate_order_status(self, value):
+        return value

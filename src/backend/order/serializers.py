@@ -7,6 +7,8 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db import transaction, IntegrityError
 from decimal import Decimal
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 
 #chỉ lấy các field trong bảng order không lấy detail 
 class OrderSimpleSerializer(serializers.ModelSerializer):
@@ -165,6 +167,7 @@ class ShopOrderDetailSerializer(serializers.ModelSerializer):
             'order_status', 'payment_status', 'payment_type'
         ]
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_product_image(self, obj):
         """Lấy ảnh đầu tiên của sản phẩm làm ảnh đại diện"""
         try:
@@ -175,11 +178,13 @@ class ShopOrderDetailSerializer(serializers.ModelSerializer):
             return None
         return ""
 
+    @extend_schema_field(serializers.DictField)
     def get_variant(self, obj):
         if obj.variant:
             return obj.variant.attributes 
         return None
-
+    
+    @extend_schema_field(OpenApiTypes.DECIMAL)
     def get_subtotal(self, obj):
         return obj.quantity * obj.price
 
@@ -193,12 +198,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model = OrderDetail
         fields = ['id', 'product_id', 'product_name', 'product_image', 'variant', 'quantity', 'price', 'payment_status', 'order_status']
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_product_image(self, obj):
         try:
             return obj.product.images.first().image_url
         except:
             return ""
-
+    @extend_schema_field(serializers.DictField)
     def get_variant(self, obj):
             if obj.variant:
                 return obj.variant.attributes
@@ -214,12 +220,14 @@ class OrderHistorySerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'total_price', 'created_at', 'payment_method', 'order_status', 'items']
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_payment_method(self, obj):
         first_item = obj.items.first()
         if first_item:
             return first_item.payment_type
         return "Unknown"
 
+    @extend_schema_field(OpenApiTypes.STR)
     def get_order_status(self, obj):
         """Lấy trạng thái đại diện cho đơn hàng"""
         first_item = obj.items.first()
