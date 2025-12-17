@@ -58,8 +58,6 @@ class VNPAYCreatePaymentView(APIView):
             bank_code = data.get('bank_code', '')
             language = data.get('language', 'vn')
             ipaddr = get_client_ip(request)
-            
-            
 
             # 2. Build URL Payment
             vnp = vnpay()

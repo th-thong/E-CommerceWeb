@@ -55,6 +55,15 @@ class OrderDetail(models.Model):
         ('pending', 'Pending'), # Đang chờ thanh toán
     )
     payment_status= models.CharField(max_length=7, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    
+    
+    PAYMENT_TYPE_CHOICES=(
+        ('VNPAY','VNPAY'),
+        ('COD','COD'),
+    )
+    
+    payment_type= models.CharField(max_length=5, choices=PAYMENT_TYPE_CHOICES, default='COD')
+    
 
     def __str__(self):
         return f"OrderDetail {self.id} for Order {self.order_id}"
