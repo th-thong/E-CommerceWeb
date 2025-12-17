@@ -25,8 +25,10 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY . .
+
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
 RUN python manage.py collectstatic --noinput
 
-EXPOSE 8000
-
-CMD ["sh", "-c", "python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8000"]
+CMD ["./entrypoint.sh"]
