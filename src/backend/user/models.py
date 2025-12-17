@@ -19,6 +19,8 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     address = models.TextField(default="None")
     
+    phone_number=models.CharField(max_length=20, null=True, blank=True)
+    
 
     # username là mặc định có trong class AbstractUser nên không cần thêm
 
