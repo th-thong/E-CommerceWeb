@@ -275,7 +275,8 @@ paths:
   /api/orders/:
     get:
       operationId: api_orders_list
-      description: Trả về danh sách tóm tắt các đơn hàng mà user hiện tại đã mua.
+      description: Trả về danh sách chi tiết các đơn hàng mà user hiện tại đã mua
+        (bao gồm cả trạng thái và sản phẩm bên trong).
       summary: Lấy lịch sử mua hàng
       tags:
       - Order
@@ -288,7 +289,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/OrderSimple'
+                  $ref: '#/components/schemas/OrderHistory'
           description: ''
         '404':
           content:
@@ -298,8 +299,8 @@ paths:
           description: ''
     post:
       operationId: api_orders_create
-      description: User gửi danh sách sản phẩm (items) để tạo đơn. Hệ thống sẽ trừ
-        tồn kho và tính tổng tiền.
+      description: User gửi danh sách sản phẩm để tạo đơn. Hỗ trợ thanh toán COD và
+        VNPAY.
       summary: Tạo đơn hàng mới
       tags:
       - Order
@@ -322,7 +323,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
+                $ref: '#/components/schemas/VNPAYResponse'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CODResponse'
           description: ''
         '400':
           content:
@@ -341,7 +348,7 @@ paths:
         name: order_id
         schema:
           type: integer
-        description: ID của đơn hàng
+        description: ID của đơn hàng cần xem
         required: true
       tags:
       - Order
@@ -1171,7 +1178,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Feedback'
           description: ''
-  /shopadmin/pendingusers:
+  /shopadmin/pendingusers/:
     get:
       operationId: shopadmin_pendingusers_list
       summary: Lấy danh sách người dùng đang chờ duyệt thành người bán
@@ -1188,7 +1195,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
           description: ''
-  /shopadmin/product-list:
+  /shopadmin/product-list/:
     get:
       operationId: shopadmin_product_list_list
       summary: Lấy danh sách sản phẩm chờ duyệt
@@ -1314,7 +1321,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /shopadmin/users:
+  /shopadmin/users/:
     get:
       operationId: shopadmin_users_list
       summary: Lấy danh sách tất cả người dùng (customer)
@@ -1352,6 +1359,22 @@ components:
         error:
           type: string
           default: Order not found
+    CODResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        order_id:
+          type: integer
+        payment_type:
+          type: string
+          default: COD
+        data:
+          $ref: '#/components/schemas/Order'
+      required:
+      - data
+      - message
+      - order_id
     CODSerializers:
       type: object
       properties:
@@ -1547,6 +1570,10 @@ components:
           items:
             $ref: '#/components/schemas/NewOrderDetail'
           writeOnly: true
+        payment_type:
+          allOf:
+          - $ref: '#/components/schemas/PaymentTypeEnum'
+          default: COD
       required:
       - items
     NewOrderDetail:
@@ -1638,14 +1665,7 @@ components:
       - product
       - quantity
       - shop
-    OrderNotFound:
-      type: object
-      properties:
-        message:
-          type: string
-      required:
-      - message
-    OrderSimple:
+    OrderHistory:
       type: object
       properties:
         id:
@@ -1653,19 +1673,73 @@ components:
           readOnly: true
         total_price:
           type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         created_at:
           type: string
           format: date-time
           readOnly: true
-        user:
-          type: integer
+        payment_method:
+          type: string
+          readOnly: true
+        order_status:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          readOnly: true
       required:
       - created_at
       - id
+      - items
+      - order_status
+      - payment_method
       - total_price
-      - user
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product_id:
+          type: integer
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        product_image:
+          type: string
+          readOnly: true
+        variant:
+          type: string
+          readOnly: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+        order_status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+      required:
+      - id
+      - price
+      - product_id
+      - product_image
+      - product_name
+      - quantity
+      - variant
+    OrderNotFound:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
     OrderStatusEnum:
       enum:
       - pending
@@ -1694,6 +1768,14 @@ components:
       description: |-
         * `paid` - Paid
         * `pending` - Pending
+    PaymentTypeEnum:
+      enum:
+      - COD
+      - VNPAY
+      type: string
+      description: |-
+        * `COD` - COD
+        * `VNPAY` - VNPAY
     Product:
       type: object
       properties:
@@ -1923,10 +2005,34 @@ components:
     ShopOrderDetail:
       type: object
       properties:
-        order:
+        id:
           type: integer
+          readOnly: true
+        order_id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_email:
+          type: string
+          format: email
+          readOnly: true
         product:
           type: integer
+        product_name:
+          type: string
+          readOnly: true
+        product_image:
+          type: string
+          readOnly: true
+        variant:
+          type: string
+          readOnly: true
         quantity:
           type: integer
           maximum: 2147483647
@@ -1935,14 +2041,28 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        shop:
-          type: integer
+        subtotal:
+          type: string
+          readOnly: true
+        order_status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+        payment_type:
+          $ref: '#/components/schemas/PaymentTypeEnum'
       required:
-      - order
+      - created_at
+      - customer_email
+      - customer_name
+      - id
+      - order_id
       - price
       - product
+      - product_image
+      - product_name
       - quantity
-      - shop
+      - subtotal
+      - variant
     ShopRegister:
       type: object
       properties:
@@ -1956,7 +2076,10 @@ components:
       properties:
         message:
           type: string
+        details:
+          type: string
       required:
+      - details
       - message
     StatusEnum:
       enum:
@@ -2021,6 +2144,10 @@ components:
           readOnly: true
         address:
           type: string
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
         role:
           type: string
           readOnly: true
@@ -2072,6 +2199,23 @@ components:
       required:
       - order_id
       - trans_date
+    VNPAYResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        order_id:
+          type: integer
+        payment_type:
+          type: string
+          default: VNPAY
+        payment_url:
+          type: string
+          format: uri
+      required:
+      - message
+      - order_id
+      - payment_url
     VNPAYUrlResponse:
       type: object
       properties:

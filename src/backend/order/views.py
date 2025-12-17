@@ -5,7 +5,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from .serializers import OrderSerializer, NewOrderSerializer, OrderSimpleSerializer, ShopOrderDetailSerializer,OrderHistorySerializer
 from rest_framework import status
-from drf_spectacular.utils import  extend_schema, inline_serializer, OpenApiParameter
+from drf_spectacular.utils import  extend_schema, inline_serializer, OpenApiParameter, OpenApiTypes
 from rest_framework import serializers
 from .models import Order, OrderDetail
 from .permissions import IsSeller
@@ -17,9 +17,9 @@ from payment.utils import create_vnpay_payment_url
     tags=['Order'],
     methods=['GET'],
     summary="Lấy lịch sử mua hàng",
-    description="Trả về danh sách tóm tắt các đơn hàng mà user hiện tại đã mua.",
+    description="Trả về danh sách chi tiết các đơn hàng mà user hiện tại đã mua (bao gồm cả trạng thái và sản phẩm bên trong).",
     responses={
-        200: OrderSimpleSerializer(many=True),
+        200: OrderHistorySerializer(many=True),
         404: inline_serializer(name='NoOrderFound', fields={'message': serializers.CharField()})
     }
 )
@@ -27,10 +27,27 @@ from payment.utils import create_vnpay_payment_url
     tags=['Order'],
     methods=['POST'],
     summary="Tạo đơn hàng mới",
-    description="User gửi danh sách sản phẩm (items) để tạo đơn. Hệ thống sẽ trừ tồn kho và tính tổng tiền.",
+    description="User gửi danh sách sản phẩm để tạo đơn. Hỗ trợ thanh toán COD và VNPAY.",
     request=NewOrderSerializer,
     responses={
-        200: OrderSerializer,
+        200: inline_serializer(
+            name='VNPAYResponse',
+            fields={
+                'message': serializers.CharField(),
+                'order_id': serializers.IntegerField(),
+                'payment_type': serializers.CharField(default='VNPAY'),
+                'payment_url': serializers.URLField()
+            }
+        ),
+        201: inline_serializer(
+            name='CODResponse',
+            fields={
+                'message': serializers.CharField(),
+                'order_id': serializers.IntegerField(),
+                'payment_type': serializers.CharField(default='COD'),
+                'data': OrderSerializer()
+            }
+        ),
         400: inline_serializer(
             name='OrderCreateError',
             fields={'message': serializers.CharField(), 'error_detail': serializers.CharField()}
@@ -113,9 +130,9 @@ def create_new_order(request):
     parameters=[
         OpenApiParameter(
             name='order_id', 
-            description='ID của đơn hàng', 
+            description='ID của đơn hàng cần xem', 
             required=True, 
-            type=int, 
+            type=OpenApiTypes.INT,
             location=OpenApiParameter.PATH
         ),
     ],
@@ -167,7 +184,7 @@ def get_order_detail(request, order_id):
     responses={
         200: ShopOrderDetailSerializer(many=True),
         404: inline_serializer(name='ShopNotFound', fields={'message': serializers.CharField()}),
-        500: inline_serializer(name='ShopSystemError', fields={'message': serializers.CharField()})
+        500: inline_serializer(name='ShopSystemError', fields={'message': serializers.CharField(), 'details': serializers.CharField()})
     }
 )
 @api_view(['GET'])
