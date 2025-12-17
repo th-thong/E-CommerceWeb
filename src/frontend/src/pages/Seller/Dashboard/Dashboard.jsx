@@ -1,74 +1,64 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Sidebar from "@/components/Layout/Sidebar/Sidebar";
 import MainContent from "@/components/Seller/main-content"
+import { fetchMyShopOrders } from "@/api/orders"
 import "./Dashboard.css"
+
+const TOKEN_KEY = "auth_tokens"
 
 const SellerDashboard = () => {
   const [activeMenu, setActiveMenu] = useState("todo")
-  const [products, setProducts] = useState([
-    { id: 1, name: "Áo thun nam casual", price: 150000, status: "Đang bán", promoted: false },
-    { id: 2, name: "Quần jean nam", price: 350000, status: "Đang bán", promoted: false },
-    { id: 3, name: "Giày thể thao", price: 650000, status: "Chờ duyệt", promoted: false },
-    { id: 4, name: "Áo khoác", price: 450000, status: "Chờ duyệt", promoted: false },
-  ])
+  const [products, setProducts] = useState([])
+  const [orders, setOrders] = useState([])
 
-  const [orders, setOrders] = useState([
-    {
-      id: 1,
-      orderCode: "DH001",
-      customerName: "Nguyễn Văn A",
-      phone: "0901234567",
-      address: "123 Đường ABC, Quận 1, TP.HCM",
-      status: "Chờ",
-      createdAt: "05/11/2025 10:30",
-      items: [
-        { id: 1, name: "Áo thun nam casual", quantity: 2, price: 150000 },
-        { id: 2, name: "Quần jean nam", quantity: 1, price: 350000 },
-      ],
-      total: 650000,
-    },
-    {
-      id: 2,
-      orderCode: "DH002",
-      customerName: "Trần Thị B",
-      phone: "0987654321",
-      address: "456 Đường XYZ, Quận 2, TP.HCM",
-      status: "Đang chuẩn bị",
-      createdAt: "05/11/2025 11:00",
-      items: [
-        { id: 3, name: "Giày thể thao", quantity: 1, price: 650000 },
-      ],
-      total: 650000,
-    },
-    {
-      id: 3,
-      orderCode: "DH003",
-      customerName: "Lê Văn C",
-      phone: "0912345678",
-      address: "789 Đường DEF, Quận 3, TP.HCM",
-      status: "Chờ",
-      createdAt: "05/11/2025 12:15",
-      items: [
-        { id: 4, name: "Áo khoác", quantity: 1, price: 450000 },
-        { id: 1, name: "Áo thun nam casual", quantity: 3, price: 150000 },
-      ],
-      total: 900000,
-    },
-    {
-      id: 4,
-      orderCode: "DH004",
-      customerName: "Phạm Thị D",
-      phone: "0923456789",
-      address: "321 Đường GHI, Quận 4, TP.HCM",
-      status: "Đang giao hàng",
-      createdAt: "04/11/2025 14:20",
-      items: [
-        { id: 2, name: "Quần jean nam", quantity: 2, price: 350000 },
-      ],
-      total: 700000,
-    },
-  ])
+  useEffect(() => {
+    const loadOrders = async () => {
+      try {
+        const savedTokens = localStorage.getItem(TOKEN_KEY)
+        const tokens = savedTokens ? JSON.parse(savedTokens) : null
+        const accessToken = tokens?.access || null
+        if (!accessToken) {
+          setOrders([])
+          return
+        }
+
+        const data = await fetchMyShopOrders(accessToken)
+
+        // API trả về danh sách ShopOrderDetail, map sang cấu trúc dùng cho UI
+        const mappedOrders = (data || []).map((item, index) => {
+          const priceNumber = Number.parseFloat(item.price) || 0
+          const quantityNumber = item.quantity ?? 0
+          const lineTotal = priceNumber * quantityNumber
+
+          return {
+            id: index + 1,
+            orderCode: `DH-${item.order}`,
+            customerName: `Khách hàng #${item.order}`,
+            phone: "",
+            address: "",
+            status: "Chờ",
+            createdAt: "",
+            items: [
+              {
+                id: item.product,
+                name: `Sản phẩm #${item.product}`,
+                quantity: quantityNumber,
+                price: priceNumber,
+              },
+            ],
+            total: lineTotal,
+          }
+        })
+
+        setOrders(mappedOrders)
+      } catch (error) {
+        console.error("Failed to load shop orders:", error)
+      }
+    }
+
+    loadOrders()
+  }, [])
 
   return (
     <div className="seller-dashboard">

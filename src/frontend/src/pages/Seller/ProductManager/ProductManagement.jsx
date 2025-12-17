@@ -2,7 +2,7 @@
 
 import "./section.css"
 import { useState, useEffect } from "react"
-import { createSellerProduct, fetchPrivateProducts } from "@/api/products"
+import { createSellerProduct, fetchSellerProducts } from "@/api/products"
 import { fetchCategories } from "@/api/categories"
 
 const TOKEN_KEY = "auth_tokens"
@@ -26,7 +26,6 @@ const ProductManagement = () => {
     uploaded_images: [],
     variants_input: JSON.stringify([
       {
-        sku: "",
         price: "",
         quantity: "",
         attributes: { color: "", type: "" },
@@ -35,7 +34,6 @@ const ProductManagement = () => {
   })
   const [variants, setVariants] = useState([
     {
-      sku: "",
       price: "",
       quantity: "",
       attributes: { color: "", type: "" },
@@ -60,14 +58,20 @@ const ProductManagement = () => {
         setProducts([])
         return
       }
-      const data = await fetchPrivateProducts(accessToken)
-      const normalized = (data || []).map((item) => ({
-        id: item.id ?? item.product_id,
-        name: item.name ?? item.product_name,
-        price: item.price ?? item.base_price ?? 0,
-        status: item.status || "Đang bán",
-        promoted: false,
-      }))
+      const data = await fetchSellerProducts(accessToken)
+      const normalized = (data || []).map((item) => {
+        const basePrice = Number.parseFloat(item.base_price ?? item.price ?? 0) || 0
+        const isActive = item.is_active ?? true
+
+        return {
+          id: item.product_id ?? item.id,
+          name: item.product_name ?? item.name,
+          price: basePrice,
+          // Nếu sản phẩm chưa được admin duyệt (is_active = false) thì hiển thị "Chờ duyệt"
+          status: isActive ? "Đang bán" : "Chờ duyệt",
+          promoted: false,
+        }
+      })
       setProducts(normalized)
     } catch (error) {
       console.error("Failed to load products:", error)
@@ -171,7 +175,6 @@ const ProductManagement = () => {
       uploaded_images: [],
       variants_input: JSON.stringify([
         {
-          sku: "",
           price: "",
           quantity: "",
           attributes: { color: "", type: "" },
@@ -180,7 +183,6 @@ const ProductManagement = () => {
     })
     setVariants([
       {
-        sku: "",
         price: "",
         quantity: "",
         attributes: { color: "", type: "" },
@@ -221,7 +223,6 @@ const ProductManagement = () => {
     setVariants([
       ...variants,
       {
-        sku: "",
         price: "",
         quantity: "",
         attributes: { color: "", type: "" },
@@ -247,8 +248,8 @@ const ProductManagement = () => {
       alert("Vui lòng chọn ít nhất một hình ảnh")
       return
     }
-    if (variants.length === 0 || variants.some((v) => !v.sku || !v.price || !v.quantity)) {
-      alert("Vui lòng điền đầy đủ thông tin biến thể sản phẩm")
+    if (variants.length === 0 || variants.some((v) => !v.price || !v.quantity)) {
+      alert("Vui lòng điền đầy đủ thông tin biến thể sản phẩm (giá, số lượng)")
       return
     }
 
@@ -278,7 +279,6 @@ const ProductManagement = () => {
 
       // Convert variants to proper format with numeric values
       const formattedVariants = variants.map((v) => ({
-        sku: v.sku,
         price: Number.parseInt(v.price) || 0,
         quantity: Number.parseInt(v.quantity) || 0,
         attributes: {
@@ -290,7 +290,7 @@ const ProductManagement = () => {
       formData.append("variants_input", JSON.stringify(formattedVariants))
 
       await createSellerProduct(formData, tokens.access)
-      alert("Thêm sản phẩm thành công!")
+      alert("Thêm sản phẩm thành công! Sản phẩm sẽ ở trạng thái 'Chờ duyệt' cho đến khi admin phê duyệt.")
       resetProductForm()
       // Refresh danh sách sản phẩm sau khi tạo mới
       await loadProducts()
@@ -547,16 +547,6 @@ const ProductManagement = () => {
                     )}
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
-                    <div>
-                      <label style={{ fontSize: "12px" }}>SKU *</label>
-                      <input
-                        type="text"
-                        value={variant.sku}
-                        onChange={(e) => handleVariantChange(index, "sku", e.target.value)}
-                        placeholder="SKU"
-                        style={{ width: "100%" }}
-                      />
-                    </div>
                     <div>
                       <label style={{ fontSize: "12px" }}>Giá (đ) *</label>
                       <input

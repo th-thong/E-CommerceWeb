@@ -31,9 +31,18 @@ export function deletePrivateProduct(productId, token) {
 }
 
 // Seller product management
+export function fetchSellerProducts(token) {
+  return get('/products/seller/my-products/', token);
+}
+
 export function createSellerProduct(formData, token) {
   return postFormData('/products/seller/my-products/', formData, token);
 }
 
+export function updateSellerProduct(productId, body, token) {
+  return put(`/products/seller/my-products/${productId}/`, body, token);
+}
 
-
+export function deleteSellerProduct(productId, token) {
+  return del(`/products/seller/my-products/${productId}/`, token);
+}
