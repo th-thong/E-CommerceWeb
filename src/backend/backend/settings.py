@@ -24,10 +24,14 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-fw+=j4s8syo!^5%(8w66*6sqgfo$+q51as)*)6x)uc1#=b=ig&'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fw+=j4s8syo!^5%(8w66*6sqgfo$+q51as)*)6x)uc1#=b=ig&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    DEBUG = False
+else:
+    DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -51,6 +55,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'django_extensions',
+    'corsheaders'
 ]
 
 REST_FRAMEWORK = {
@@ -61,6 +66,7 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'user.User' # Quy định class User chung cho toàn dự án
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -70,6 +76,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -105,8 +112,6 @@ if is_use_cloud_database=='TRUE':
             ssl_require=True 
         )
     }
-    
-
 
 else:
 
