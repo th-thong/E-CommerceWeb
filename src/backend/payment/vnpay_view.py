@@ -16,6 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer, OpenApiTypes
 from rest_framework import serializers
+import pytz
 
 # Hàm lấy IP Client (Helper function)
 def get_client_ip(request):
@@ -78,7 +79,9 @@ class VNPAYCreatePaymentView(APIView):
             if bank_code:
                 vnp.requestData['vnp_BankCode'] = bank_code
 
-            vnp.requestData['vnp_CreateDate'] = datetime.now().strftime('%Y%m%d%H%M%S')
+            tz_vietnam = pytz.timezone('Asia/Ho_Chi_Minh')
+            curr_date = datetime.now(tz_vietnam)
+            vnp.requestData['vnp_CreateDate'] = curr_date.strftime('%Y%m%d%H%M%S')
             if ipaddr:
                 vnp.requestData['vnp_IpAddr'] = ipaddr
             else:

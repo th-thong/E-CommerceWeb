@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from .payment_provider.vnpay import vnpay
 from .vnpay_view import get_client_ip
+import pytz
 
 
 def create_vnpay_payment_url(order, request):
@@ -24,7 +25,8 @@ def create_vnpay_payment_url(order, request):
     vnp.requestData['vnp_Locale'] = 'vn'
     
     # 3. Cấu hình thời gian (Tạo & Hết hạn sau 15 phút)
-    curr_date = datetime.now()
+    tz_vietnam = pytz.timezone('Asia/Ho_Chi_Minh')
+    curr_date = datetime.now(tz_vietnam)
     vnp.requestData['vnp_CreateDate'] = curr_date.strftime('%Y%m%d%H%M%S')
     
     expire_date = curr_date + timedelta(minutes=15)
