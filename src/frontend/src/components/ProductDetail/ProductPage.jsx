@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import ProductDetail from "./ProductDetail"
 import ProductDetailSkeleton from "./ProductDetailSkeleton"
-import { fetchProductById } from "../services/api"
+import { fetchPublicProductDetail } from "@/api/products"
 import "./product-detail.css"
 
 export default function ProductPage() {
@@ -17,18 +17,52 @@ export default function ProductPage() {
     setError(null)
     setProduct(null)
 
-    // Fetch product từ API
+    // Fetch product từ Django backend API
     const loadProduct = async () => {
       try {
-        const data = await fetchProductById(productId)
-        setProduct(data)
+        const data = await fetchPublicProductDetail(productId)
+        
+        // Transform data từ backend sang format component cần
+        const transformedProduct = {
+          id: data.product_id,
+          product_id: data.product_id,
+          name: data.product_name,
+          product_name: data.product_name,
+          description: data.description,
+          base_price: data.base_price,
+          priceLabel: new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          }).format(data.base_price),
+          discount: data.discount,
+          discountPercent: data.discount,
+          originalPriceLabel: data.discount > 0 ? new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          }).format(data.base_price) : null,
+          images: data.images?.map(img => img.image_url) || [],
+          variants: data.variants?.map(v => ({
+            label: "Loại",
+            options: Object.values(v.attributes || {})
+          })) || [],
+          rating: data.average_rating || 0,
+          soldLabel: `${data.total_sold || 0}`,
+          inStock: true,
+          stockLabel: "Còn hàng",
+          categoryName: data.category?.name || "Sản phẩm",
+          // Thêm dữ liệu gốc để có thể dùng cho giỏ hàng
+          _originalData: data
+        }
+        
+        setProduct(transformedProduct)
         setError(null)
       } catch (err) {
-        if (err.message === "NOT_FOUND") {
+        console.error("Error loading product:", err)
+        if (err.message?.includes("404") || err.message?.includes("not found")) {
           setError("NOT_FOUND")
-        } else if (err.message === "SERVER_ERROR") {
+        } else if (err.message?.includes("500")) {
           setError("SERVER_ERROR")
-        } else if (err.message === "NETWORK_ERROR") {
+        } else if (err.message?.includes("network") || err.message?.includes("fetch")) {
           setError("NETWORK_ERROR")
         } else {
           setError("UNKNOWN_ERROR")
@@ -49,7 +83,7 @@ export default function ProductPage() {
     return (
       <div className="product-page">
         <Link to="/" className="product-detail__backlink">
-          ← Quay lại bộ sưu tập
+          ← Quay lại trang chủ
         </Link>
         <ProductDetailSkeleton />
       </div>
@@ -98,7 +132,7 @@ export default function ProductPage() {
   return (
     <div className="product-page">
       <Link to="/" className="product-detail__backlink">
-        ← Quay lại bộ sưu tập
+        ← Quay lại trang chủ
       </Link>
       <ProductDetail product={product} />
     </div>

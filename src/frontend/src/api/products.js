@@ -9,6 +9,18 @@ export function fetchPublicProductDetail(productId) {
   return get(`/products/public/${productId}/`);
 }
 
+export function fetchTrendyProducts(token = null) {
+  return get('/products/public/trendy/', token);
+}
+
+export function fetchFlashSaleProducts(token = null) {
+  return get('/products/public/flash-sale/', token);
+}
+
+export function fetchRecommendProducts(token = null) {
+  return get('/products/public/recommend/', token);
+}
+
 // Private (require token)
 export function fetchPrivateProducts(token) {
   return get('/products/private/list/', token);

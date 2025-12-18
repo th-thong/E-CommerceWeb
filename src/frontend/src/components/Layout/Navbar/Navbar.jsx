@@ -3,12 +3,16 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AuthModal from "@/components/Common/AuthModal/AuthModal";
 import { getProfile } from "@/api/auth";
+import Cart from "@/components/Cart/Cart";
+import { useCart } from "@/contexts/CartContext";
 
 const TOKEN_KEY = "auth_tokens";
 
 const Navbar = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
+  const [cartOpen, setCartOpen] = useState(false);
+  const { getTotalItems } = useCart();
   const [tokens, setTokens] = useState(() => {
     const saved = localStorage.getItem(TOKEN_KEY);
     return saved ? JSON.parse(saved) : null;
@@ -78,8 +82,8 @@ const Navbar = () => {
               <button className="search-btn">🔍</button>
             </div>
 
-            <button className="btn cart-btn">
-              🛒 <span className="cart-count">0</span>
+            <button className="btn cart-btn" onClick={() => setCartOpen(true)}>
+              🛒 <span className="cart-count">{getTotalItems()}</span>
             </button>
           </div>
 
@@ -133,6 +137,8 @@ const Navbar = () => {
         onModeChange={setAuthMode}
         onAuthSuccess={handleAuthSuccess}
       />
+
+      <Cart isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </>
   );
 };

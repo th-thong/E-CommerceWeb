@@ -16,9 +16,17 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
   const [message, setMessage] = useState(null)
 
   useEffect(() => {
-    setMode(initialMode)
-    setError(null)
-    setMessage(null)
+    if (isOpen) {
+      // Reset tất cả form data khi mở modal
+      setMode(initialMode)
+      setEmail("")
+      setPassword("")
+      setConfirmPassword("")
+      setUsername("")
+      setPhone("")
+      setError(null)
+      setMessage(null)
+    }
   }, [initialMode, isOpen])
 
   const handleSubmit = async (e) => {

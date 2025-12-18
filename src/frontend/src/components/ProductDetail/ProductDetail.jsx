@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { useCart } from "@/contexts/CartContext"
 import "./product-detail.css"
 
 // Helper function để map tên màu sang hex color
@@ -41,6 +43,8 @@ function getColorValue(colorName) {
 }
 
 export default function ProductDetail({ product }) {
+  const navigate = useNavigate()
+  const { addToCart } = useCart()
   const [selectedImage, setSelectedImage] = useState(product?.images?.[0] || "")
   const [selectedVariants, setSelectedVariants] = useState({})
   const [quantity, setQuantity] = useState(1)
@@ -68,6 +72,35 @@ export default function ProductDetail({ product }) {
     const parsed = Number.parseInt(String(value), 10)
     if (Number.isNaN(parsed)) return 1
     return Math.min(99, Math.max(1, parsed))
+  }
+
+  const handleAddToCart = () => {
+    if (!product || !product._originalData) return
+    
+    // Lấy dữ liệu gốc từ backend
+    const originalProduct = product._originalData
+    
+    // Tìm variant phù hợp với selectedVariants (nếu có)
+    let selectedVariant = null
+    if (originalProduct.variants && originalProduct.variants.length > 0) {
+      selectedVariant = originalProduct.variants[0] // Mặc định lấy variant đầu tiên
+    }
+    
+    addToCart(originalProduct, selectedVariant, quantity)
+    alert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`)
+  }
+
+  const handleBuyNow = () => {
+    if (!product || !product._originalData) return
+    
+    const originalProduct = product._originalData
+    let selectedVariant = null
+    if (originalProduct.variants && originalProduct.variants.length > 0) {
+      selectedVariant = originalProduct.variants[0]
+    }
+    
+    addToCart(originalProduct, selectedVariant, quantity)
+    navigate('/checkout')
   }
 
   const renderDetailDescription = () => {
@@ -250,23 +283,22 @@ export default function ProductDetail({ product }) {
             </div>
 
             <div className="product-detail__actions">
-              <button type="button" className={`cta primary ${!product.inStock ? "is-disabled" : ""}`} disabled={!product.inStock}>
-                Thêm vào giỏ
+              <button 
+                type="button" 
+                className={`cta primary ${!product.inStock ? "is-disabled" : ""}`} 
+                disabled={!product.inStock}
+                onClick={handleAddToCart}
+              >
+                Thêm vào giỏ hàng
               </button>
-              <button type="button" className={`cta ghost ${!product.inStock ? "is-disabled" : ""}`} disabled={!product.inStock}>
+              <button 
+                type="button" 
+                className={`cta ghost ${!product.inStock ? "is-disabled" : ""}`} 
+                disabled={!product.inStock}
+                onClick={handleBuyNow}
+              >
                 Mua ngay
               </button>
-              {product.sourceLink && (
-                <a
-                  className="cta link"
-                  href={product.sourceLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Xem sản phẩm gốc"
-                >
-                  Xem trên Shopee ↗
-                </a>
-              )}
             </div>
           </div>
         </div>
@@ -277,7 +309,7 @@ export default function ProductDetail({ product }) {
           <h2>Thông tin chi tiết</h2>
           {renderDetailTagline()}
           {renderDetailDescription()}
-          {!!product.specs?.length ? (
+          {!!product.specs?.length && (
             <dl>
               {product.specs.map((spec) => (
                 <div key={spec.label} className="panel__spec">
@@ -286,8 +318,6 @@ export default function ProductDetail({ product }) {
                 </div>
               ))}
             </dl>
-          ) : (
-            <p>Đang cập nhật thông số.</p>
           )}
         </article>
 

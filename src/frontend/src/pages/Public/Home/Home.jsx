@@ -1,47 +1,99 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
+import { useCart } from "@/contexts/CartContext"
+import { fetchTrendyProducts, fetchFlashSaleProducts } from "@/api/products"
 import "./Home.css"
+
+const TOKEN_KEY = "auth_tokens"
 
 const HomePage = () => {
   const navigate = useNavigate()
+  const { addToCart } = useCart()
   const [trendyProducts, setTrendyProducts] = useState([])
   const [flashSaleProducts, setFlashSaleProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    const promotedData = [
-      {
-        id: 1,
-        name: "Áo thun nam casual",
-        price: 150000,
-        image: "/electronics-components.png",
-        type: "trendy",
-      },
-      {
-        id: 2,
-        name: "Quần jean nam",
-        price: 350000,
-        image: "/diverse-fashion-collection.png",
-        type: "trendy",
-      },
-      {
-        id: 3,
-        name: "Giày thể thao",
-        price: 650000,
-        originalPrice: 750000,
-        discount: 15,
-        image: "/cozy-cabin-interior.png",
-        type: "flash_sale",
-      },
-    ]
+    const loadProducts = async () => {
+      try {
+        setLoading(true)
+        setError(null)
 
-    setTrendyProducts(promotedData.filter((p) => p.type === "trendy"))
-    setFlashSaleProducts(promotedData.filter((p) => p.type === "flash_sale"))
+        // Lấy token nếu đã đăng nhập
+        const savedTokens = localStorage.getItem(TOKEN_KEY)
+        const tokens = savedTokens ? JSON.parse(savedTokens) : null
+        const accessToken = tokens?.access || null
+
+        // Tải song song cả trendy và flash sale
+        const [trendyData, flashSaleData] = await Promise.all([
+          fetchTrendyProducts(accessToken),
+          fetchFlashSaleProducts(accessToken)
+        ])
+
+        setTrendyProducts(trendyData || [])
+        setFlashSaleProducts(flashSaleData || [])
+      } catch (err) {
+        console.error("Error loading products:", err)
+        setError(err.message || "Không thể tải sản phẩm")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProducts()
   }, [])
 
   const handleNavigateToSeller = () => {
     navigate("/seller")
+  }
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(price)
+  }
+
+  const formatSoldCount = (count) => {
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}k`
+    }
+    return count
+  }
+
+  if (loading) {
+    return (
+      <main className="home-page">
+        <section className="hero-banner">
+          <h1>Chào mừng đến ShopLiteX</h1>
+          <p>Nền tảng mua bán trực tuyến đến từ nhóm LOWKEY DUDES</p>
+        </section>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Đang tải sản phẩm...</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="home-page">
+        <section className="hero-banner">
+          <h1>Chào mừng đến ShopLiteX</h1>
+          <p>Nền tảng mua bán trực tuyến đến từ nhóm LOWKEY DUDES</p>
+        </section>
+        <div className="error-container">
+          <p className="error-message">⚠️ {error}</p>
+          <button className="cta-button" onClick={() => window.location.reload()}>
+            Thử lại
+          </button>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -53,42 +105,101 @@ const HomePage = () => {
 
       {trendyProducts.length > 0 && (
         <section className="promoted-section trendy-section">
-          <h2>🔥 Sản Phẩm Trendy</h2>
+          <h2>🔥 Sản Phẩm Trendy (Bán Chạy)</h2>
           <div className="products-grid">
-            {trendyProducts.map((product) => (
-              <div key={product.id} className="product-card">
-                <div className="product-image">
-                  <img src={product.image || "/placeholder.svg"} alt={product.name} />
-                </div>
-                <div className="product-info">
-                  <h4>{product.name}</h4>
-                  <p className="product-price">{product.price.toLocaleString()}₫</p>
-                </div>
-              </div>
-            ))}
+            {trendyProducts.map((product) => {
+              const displayPrice = product.discount > 0 
+                ? product.base_price * (1 - product.discount / 100)
+                : product.base_price
+              
+              return (
+                <Link 
+                  key={product.product_id} 
+                  to={`/product/${product.product_id}`} 
+                  className="product-card-link"
+                >
+                  <div className="product-card">
+                    <div className="product-image">
+                      <img 
+                        src={product.images?.[0]?.image_url || "/placeholder.svg"} 
+                        alt={product.product_name}
+                        onError={(e) => {
+                          e.target.src = "/placeholder.svg"
+                        }}
+                      />
+                      {product.discount > 0 && (
+                        <div className="discount-badge">-{product.discount}%</div>
+                      )}
+                    </div>
+                    <div className="product-info">
+                      <h4>{product.product_name}</h4>
+                      {product.discount > 0 ? (
+                        <div className="price-section">
+                          <p className="sale-price">{formatPrice(displayPrice)}</p>
+                          <p className="original-price">{formatPrice(product.base_price)}</p>
+                        </div>
+                      ) : (
+                        <p className="product-price">{formatPrice(product.base_price)}</p>
+                      )}
+                      <div className="product-stats">
+                        <span className="rating">
+                          ⭐ {product.average_rating || 0}
+                        </span>
+                        <span className="sold">
+                          Đã bán {formatSoldCount(product.total_sold || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         </section>
       )}
 
       {flashSaleProducts.length > 0 && (
         <section className="promoted-section flash-sale-section">
-          <h2>⚡ Flash Sale</h2>
+          <h2>⚡ Flash Sale (Giảm Giá Sốc)</h2>
           <div className="products-grid">
-            {flashSaleProducts.map((product) => (
-              <div key={product.id} className="product-card flash-sale-card">
-                <div className="discount-badge">-{product.discount}%</div>
-                <div className="product-image">
-                  <img src={product.image || "/placeholder.svg"} alt={product.name} />
-                </div>
-                <div className="product-info">
-                  <h4>{product.name}</h4>
-                  <div className="price-section">
-                    <p className="original-price">{product.originalPrice.toLocaleString()}₫</p>
-                    <p className="sale-price">{product.price.toLocaleString()}₫</p>
+            {flashSaleProducts.map((product) => {
+              const salePrice = product.base_price * (1 - product.discount / 100)
+              return (
+                <Link 
+                  key={product.product_id} 
+                  to={`/product/${product.product_id}`}
+                  className="product-card-link"
+                >
+                  <div className="product-card flash-sale-card">
+                    <div className="discount-badge">-{product.discount}%</div>
+                    <div className="product-image">
+                      <img 
+                        src={product.images?.[0]?.image_url || "/placeholder.svg"} 
+                        alt={product.product_name}
+                        onError={(e) => {
+                          e.target.src = "/placeholder.svg"
+                        }}
+                      />
+                    </div>
+                    <div className="product-info">
+                      <h4>{product.product_name}</h4>
+                      <div className="price-section">
+                        <p className="sale-price">{formatPrice(salePrice)}</p>
+                        <p className="original-price">{formatPrice(product.base_price)}</p>
+                      </div>
+                      <div className="product-stats">
+                        <span className="rating">
+                          ⭐ {product.average_rating || 0}
+                        </span>
+                        <span className="sold">
+                          Đã bán {formatSoldCount(product.total_sold || 0)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                </Link>
+              )
+            })}
           </div>
         </section>
       )}
