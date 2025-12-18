@@ -55,13 +55,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'django_extensions',
-    'corsheaders',
-    'anymail'
+    'corsheaders'
 ]
-
-ANYMAIL = {
-    "SENDGRID_API_KEY": os.environ.get("SENDGRID_API_KEY"),
-}
 
 
 REST_FRAMEWORK = {
@@ -184,7 +179,6 @@ IMAGEKIT_URL_ENDPOINT = os.environ.get('IMAGEKIT_URL_ENDPOINT')
 USE_CLOUD_STORAGE=os.environ.get('USE_CLOUD_STORAGE')
 
 
-EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
 
 CACHES = {

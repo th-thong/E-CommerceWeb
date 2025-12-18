@@ -10,11 +10,13 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.views import APIView
 from django.core.cache import cache
-from django.core.mail import send_mail
 import random
 from django.conf import settings
 import threading
 import logging
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -22,21 +24,19 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-def send_otp_email_async(subject, message, recipient_list):
-    """
-    Hàm thực hiện gửi email trong một thread riêng biệt.
-    """
+def send_otp_via_sendgrid_api(email, otp):
+    message = Mail(
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to_emails=email,
+        subject='[ShopLiteX] Mã xác thực đặt lại mật khẩu',
+        html_content=f'<strong>Mã OTP của bạn là: {otp}</strong>'
+    )
     try:
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=recipient_list,
-            fail_silently=False,
-        )
-        print(f"Email sent successfully to {recipient_list}")
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        print(f"SendGrid Status: {response.status_code}")
     except Exception as e:
-        logger.error(f"Failed to send OTP email to {recipient_list}: {str(e)}")
+        print(f"SendGrid Error: {str(e)}")
 
 
 @extend_schema(
@@ -220,13 +220,9 @@ class ForgotPasswordView(APIView):
             cache_key = f"otp_reset_{email}"
             cache.set(cache_key, otp, timeout=300)
 
-
-            subject = '[ShopLiteX] Mã xác thực đặt lại mật khẩu'
-            message = f'Xin chào,\n\nMã OTP của bạn là: {otp}\n\nMã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này cho ai.'
-
             email_thread = threading.Thread(
-                target=send_otp_email_async,
-                args=(subject, message, [email])
+                target=send_otp_via_sendgrid_api,
+                args=(email,otp)
             )
             email_thread.start()
 
