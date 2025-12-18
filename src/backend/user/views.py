@@ -194,7 +194,7 @@ class ForgotPasswordView(APIView):
         # Sinh OTP ngẫu nhiên 6 số
         otp = str(random.randint(100000, 999999))
         
-        # 2. Lưu OTP vào Cache RAM trong 5 phút (300 giây)
+        # 2. Lưu OTP vào Cache trong 5 phút (300 giây)
         cache_key = f"otp_reset_{email}"
         cache.set(cache_key, otp, timeout=300)
 
@@ -210,7 +210,7 @@ class ForgotPasswordView(APIView):
         except Exception as e:
             return Response({'error': 'Error sending email, please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response({'message': 'OTP code has been sent to your email.'}, status=status.HTTP_200_OK)
+        return Response({'message': 'OTP code has been sent to your email, please check your spam email as well.'}, status=status.HTTP_200_OK)
 
 
 class ResetPasswordView(APIView):

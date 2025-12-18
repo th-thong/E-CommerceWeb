@@ -189,7 +189,11 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'my_cache_table',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
     }
 }
 
