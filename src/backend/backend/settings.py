@@ -55,8 +55,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'django_extensions',
-    'corsheaders'
+    'corsheaders',
+    'anymail'
 ]
+
+ANYMAIL = {
+    "SENDGRID_API_KEY": os.environ.get("SENDGRID_API_KEY"),
+}
+
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -178,19 +184,8 @@ IMAGEKIT_URL_ENDPOINT = os.environ.get('IMAGEKIT_URL_ENDPOINT')
 USE_CLOUD_STORAGE=os.environ.get('USE_CLOUD_STORAGE')
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT')) if (os.environ.get('EMAIL_PORT') is not None) else 1
-
-def str_to_bool(value):
-    return str(value).upper() == 'TRUE'
-
-EMAIL_USE_SSL = str_to_bool(os.environ.get('EMAIL_USE_SSL', 'FALSE'))
-EMAIL_USE_TLS = str_to_bool(os.environ.get('EMAIL_USE_TLS', 'FALSE'))
-
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
+EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
 
 CACHES = {
     'default': {
