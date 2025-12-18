@@ -13,9 +13,31 @@ from django.core.cache import cache
 from django.core.mail import send_mail
 import random
 from django.conf import settings
+import threading
+import logging
+
+logger = logging.getLogger(__name__)
 
 from django.contrib.auth import get_user_model
 User = get_user_model()
+
+
+def send_otp_email_async(subject, message, recipient_list):
+    """
+    Hàm thực hiện gửi email trong một thread riêng biệt.
+    """
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipient_list,
+            fail_silently=False,
+        )
+        print(f"Email sent successfully to {recipient_list}")
+    except Exception as e:
+        logger.error(f"Failed to send OTP email to {recipient_list}: {str(e)}")
+
 
 @extend_schema(
     tags=['User'],
@@ -180,37 +202,37 @@ class ForgotPasswordView(APIView):
         description="Người dùng nhập Email. Hệ thống sẽ kiểm tra và gửi mã OTP (6 số) về email nếu tồn tại. OTP có hiệu lực 5 phút."
     )
     def post(self, request):
-        email = request.data.get('email')
-        
-        if not email:
-            return Response({'error': 'Please enter email'}, status=status.HTTP_400_BAD_REQUEST)
+            email = request.data.get('email')
+            
+            if not email:
+                return Response({'error': 'Please enter email'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Kiểm tra email có tồn tại trong hệ thống không
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response({'message': 'If email exists please check email to get OTP'}, status=status.HTTP_200_OK)
+            # Kiểm tra email có tồn tại trong hệ thống không
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                return Response({'message': 'If email exists please check email to get OTP'}, status=status.HTTP_200_OK)
 
-        # Sinh OTP ngẫu nhiên 6 số
-        otp = str(random.randint(100000, 999999))
-        
-        # 2. Lưu OTP vào Cache trong 5 phút (300 giây)
-        cache_key = f"otp_reset_{email}"
-        cache.set(cache_key, otp, timeout=300)
+            # Sinh OTP ngẫu nhiên 6 số
+            otp = str(random.randint(100000, 999999))
+            
+            # Lưu OTP vào Cache
+            cache_key = f"otp_reset_{email}"
+            cache.set(cache_key, otp, timeout=300)
 
-        # Gửi Email
-        try:
-            send_mail(
-                subject='[ShopLiteX] Mã xác thực đặt lại mật khẩu',
-                message=f'Xin chào,\n\nMã OTP của bạn là: {otp}\n\nMã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này cho ai.',
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False,
+
+            subject = '[ShopLiteX] Mã xác thực đặt lại mật khẩu'
+            message = f'Xin chào,\n\nMã OTP của bạn là: {otp}\n\nMã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này cho ai.'
+
+            email_thread = threading.Thread(
+                target=send_otp_email_async,
+                args=(subject, message, [email])
             )
-        except Exception as e:
-            return Response({'error': 'Error sending email, please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            email_thread.start()
 
-        return Response({'message': 'OTP code has been sent to your email, please check your spam email as well.'}, status=status.HTTP_200_OK)
+            return Response({
+                'message': 'OTP code is being sent to your email, please check your inbox (and spam folder).'
+            }, status=status.HTTP_200_OK)
 
 
 class ResetPasswordView(APIView):
