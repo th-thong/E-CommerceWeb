@@ -8,14 +8,16 @@ class ShopSerializer(serializers.ModelSerializer):
     shop_id = serializers.IntegerField(source='id')
     class Meta:
         model=Shop
-        fields=['shop_id','shop_name', "owner"]
+        fields=['shop_id','shop_name', "owner", "shop_phone_number",
+                "shop_address","shop_email","description"]
+        
         extra_kwargs = {'owner':{'read_only':True}}
         
         
 class ShopRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model=Shop
-        fields=['shop_name']
+        fields=['shop_name',"shop_phone_number","shop_address","shop_email","description"]
         
     def create(self, validated_data):
         shop = Shop.objects.create(**validated_data)
