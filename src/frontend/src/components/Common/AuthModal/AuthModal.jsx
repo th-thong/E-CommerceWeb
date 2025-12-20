@@ -55,10 +55,15 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
       }
     } catch (err) {
       const rawMsg = err?.message || ""
-      const friendly =
-        rawMsg.toLowerCase().includes("incorrect email or password") || rawMsg.toLowerCase().includes("incorrect email")
-          ? "Sai email hoặc mật khẩu. Vui lòng nhập lại"
-          : rawMsg || "Có lỗi xảy ra, vui lòng thử lại"
+      let friendly = rawMsg || "Có lỗi xảy ra, vui lòng thử lại"
+      
+      // Xử lý các lỗi cụ thể
+      if (rawMsg.toLowerCase().includes("banned")) {
+        friendly = "Tài khoản của bạn đã bị khóa do vi phạm"
+      } else if (rawMsg.toLowerCase().includes("incorrect email or password") || rawMsg.toLowerCase().includes("incorrect email")) {
+        friendly = "Sai email hoặc mật khẩu. Vui lòng nhập lại"
+      }
+      
       setError(friendly)
     } finally {
       setIsSubmitting(false)
