@@ -1,5 +1,5 @@
 import "./Navbar.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AuthModal from "@/components/Common/AuthModal/AuthModal";
 import { getProfile } from "@/api/auth";
@@ -9,9 +9,11 @@ import { useCart } from "@/contexts/CartContext";
 const TOKEN_KEY = "auth_tokens";
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [cartOpen, setCartOpen] = useState(false);
+  const [showSellerModal, setShowSellerModal] = useState(false);
   const { getTotalItems } = useCart();
   const [tokens, setTokens] = useState(() => {
     const saved = localStorage.getItem(TOKEN_KEY);
@@ -52,6 +54,42 @@ const Navbar = () => {
     setTokens(null);
   };
 
+  const handleSellerLinkClick = async (e) => {
+    e.preventDefault();
+    
+    // Nếu chưa đăng nhập, chuyển đến trang đăng nhập
+    if (!tokens?.access) {
+      setAuthMode("login");
+      setAuthOpen(true);
+      return;
+    }
+
+    // Kiểm tra quyền seller
+    try {
+      const userProfile = profile || await getProfile(tokens.access);
+      if (userProfile.role === "Seller" || userProfile.role === "Admin") {
+        // Nếu là seller, navigate đến trang seller
+        navigate("/seller");
+      } else {
+        // Nếu không phải seller, hiển thị popup
+        setShowSellerModal(true);
+      }
+    } catch (err) {
+      console.error("Error checking seller permission:", err);
+      // Nếu có lỗi, vẫn hiển thị popup
+      setShowSellerModal(true);
+    }
+  };
+
+  const handleSellerModalYes = () => {
+    setShowSellerModal(false);
+    navigate("/seller-registration");
+  };
+
+  const handleSellerModalNo = () => {
+    setShowSellerModal(false);
+  };
+
   return (
     <>
       <header className="navbar">
@@ -59,7 +97,7 @@ const Navbar = () => {
         <div className="navbar-top">
           <div className="navbar-links">
             <Link to="/admin">Kênh Admin</Link> |
-            <Link to="/seller">Kênh người bán</Link> |
+            <a href="#" onClick={handleSellerLinkClick} style={{ cursor: 'pointer' }}>Kênh người bán</a> |
             <Link to="/seller-registration">Trở thành người bán ShopLiteX</Link>
             <span className="social-icons">
               <i className="fab fa-facebook"></i>
@@ -140,6 +178,109 @@ const Navbar = () => {
       />
 
       <Cart isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+
+      {showSellerModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000,
+          backdropFilter: 'blur(5px)'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(30, 30, 45, 0.95))',
+            border: '1px solid rgba(255, 94, 0, 0.25)',
+            borderRadius: '16px',
+            padding: '40px',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            textAlign: 'center',
+            color: '#fff',
+            fontFamily: 'Rajdhani, sans-serif'
+          }}>
+            <h2 style={{
+              fontSize: '24px',
+              fontWeight: 700,
+              marginBottom: '20px',
+              background: 'linear-gradient(45deg, #ff5e00, #00b2ff)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontFamily: 'Orbitron, sans-serif'
+            }}>
+              Thông Báo
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: 'rgba(255, 255, 255, 0.9)',
+              marginBottom: '30px',
+              lineHeight: '1.6'
+            }}>
+              Tài khoản chưa được cấp quyền người bán, bạn có muốn đăng kí trở thành người bán không?
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={handleSellerModalNo}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#f5f5f5',
+                  fontFamily: 'Rajdhani, sans-serif',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.12)'
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+                }}
+              >
+                Không
+              </button>
+              <button
+                onClick={handleSellerModalYes}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: 'linear-gradient(45deg, #ff5e00, #ff8c42)',
+                  border: 'none',
+                  color: '#0a0a0a',
+                  fontFamily: 'Rajdhani, sans-serif',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.transform = 'translateY(-2px)'
+                  e.target.style.boxShadow = '0 8px 20px rgba(255, 94, 0, 0.35)'
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.transform = 'translateY(0)'
+                  e.target.style.boxShadow = 'none'
+                }}
+              >
+                Có
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

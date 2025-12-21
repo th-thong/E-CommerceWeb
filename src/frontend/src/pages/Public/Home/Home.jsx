@@ -46,10 +46,6 @@ const HomePage = () => {
     loadProducts()
   }, [])
 
-  const handleNavigateToSellerRegistration = () => {
-    navigate("/seller-registration")
-  }
-
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -222,16 +218,6 @@ const HomePage = () => {
             <h3>Nhà Cửa</h3>
             <p>Đồ dùng gia đình và trang trí nhà</p>
           </div>
-        </div>
-      </section>
-
-      <section className="seller-call-to-action">
-        <div className="cta-content">
-          <h2>Bạn Là Người Bán?</h2>
-          <p>Tham gia ShopLiteX và phát triển kinh doanh của bạn với là khách hàng tiềm năng</p>
-          <button className="cta-button" onClick={handleNavigateToSellerRegistration}>
-            Trở thành người bán ShopLiteX
-          </button>
         </div>
       </section>
     </main>
