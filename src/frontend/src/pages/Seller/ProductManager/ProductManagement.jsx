@@ -2,7 +2,7 @@
 
 import "./section.css"
 import { useState, useEffect } from "react"
-import { createSellerProduct, fetchSellerProducts } from "@/api/products"
+import { createSellerProduct, fetchSellerProducts, promoteProduct } from "@/api/products"
 import { fetchCategories } from "@/api/categories"
 
 const TOKEN_KEY = "auth_tokens"
@@ -62,14 +62,19 @@ const ProductManagement = () => {
       const normalized = (data || []).map((item) => {
         const basePrice = Number.parseFloat(item.base_price ?? item.price ?? 0) || 0
         const isActive = item.is_active ?? true
+        const isTrendy = item.is_trendy ?? false
+        const isFlashSale = item.is_flash_sale ?? false
 
         return {
           id: item.product_id ?? item.id,
+          product_id: item.product_id ?? item.id,
           name: item.product_name ?? item.name,
           price: basePrice,
           // Nếu sản phẩm chưa được admin duyệt (is_active = false) thì hiển thị "Chờ duyệt"
           status: isActive ? "Đang bán" : "Chờ duyệt",
-          promoted: false,
+          promoted: isTrendy || isFlashSale,
+          promotionType: isTrendy ? "trendy" : isFlashSale ? "flash_sale" : null,
+          discountPercent: item.discount ?? 0,
         }
       })
       setProducts(normalized)
@@ -130,7 +135,7 @@ const ProductManagement = () => {
     )
   }
 
-  const handlePromoteProducts = () => {
+  const handlePromoteProducts = async () => {
     if (selectedProducts.length === 0) {
       alert("Vui lòng chọn ít nhất một sản phẩm")
       return
@@ -144,19 +149,51 @@ const ProductManagement = () => {
       return
     }
 
-    const updatedProducts = products.map((p) =>
-      selectedProducts.find((sp) => sp.id === p.id)
-        ? {
-            ...p,
-            promoted: true,
-            promotionType: promotionForm.type,
-            discountPercent: promotionForm.discount,
-          }
-        : p,
-    )
-    setProducts(updatedProducts)
-    alert("Sản phẩm đã được đưa vào Trendy/Flash Sale thành công!")
-    resetPromotionForm()
+    // Lấy token
+    const savedTokens = localStorage.getItem(TOKEN_KEY)
+    if (!savedTokens) {
+      alert("Vui lòng đăng nhập")
+      return
+    }
+    const tokens = JSON.parse(savedTokens)
+    const accessToken = tokens?.access
+
+    if (!accessToken) {
+      alert("Vui lòng đăng nhập")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // Gọi API cho từng sản phẩm được chọn
+      const promotePromises = selectedProducts.map((product) => {
+        const body = {
+          is_trendy: promotionForm.type === "trendy",
+          is_flash_sale: promotionForm.type === "flash_sale",
+          promotion_start_date: promotionForm.startDate,
+          promotion_end_date: promotionForm.endDate,
+        }
+        
+        if (promotionForm.type === "flash_sale") {
+          body.discount = promotionForm.discount
+        }
+        
+        return promoteProduct(product.product_id || product.id, body, accessToken)
+      })
+
+      await Promise.all(promotePromises)
+      
+      // Reload products để lấy dữ liệu mới nhất
+      await loadProducts()
+      
+      alert("Sản phẩm đã được đưa vào Trendy/Flash Sale thành công!")
+      resetPromotionForm()
+    } catch (error) {
+      console.error("Error promoting products:", error)
+      alert(error.message || "Có lỗi xảy ra khi đẩy sản phẩm lên Trendy/Flash Sale")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const resetPromotionForm = () => {

@@ -13,6 +13,11 @@ export function updateMyShop(body, token) {
   return put('/shops/my-shop/', body, token);
 }
 
+// Register to become a seller (creates shop with pending status)
+export function registerAsSeller(body, token) {
+  return post('/shops/my-shop/', body, token);
+}
+
 
 
 

@@ -58,3 +58,8 @@ export function updateSellerProduct(productId, body, token) {
 export function deleteSellerProduct(productId, token) {
   return del(`/products/seller/my-products/${productId}/`, token);
 }
+
+// Promote product to trendy/flash sale
+export function promoteProduct(productId, body, token) {
+  return post(`/products/seller/my-products/${productId}/promote/`, body, token);
+}

@@ -59,7 +59,8 @@ const Navbar = () => {
         <div className="navbar-top">
           <div className="navbar-links">
             <Link to="/admin">Kênh Admin</Link> |
-            <a href="#">Trở thành Người bán ShopLiteX</a>
+            <Link to="/seller">Kênh người bán</Link> |
+            <Link to="/seller-registration">Trở thành người bán ShopLiteX</Link>
             <span className="social-icons">
               <i className="fab fa-facebook"></i>
               <i className="fab fa-instagram"></i>

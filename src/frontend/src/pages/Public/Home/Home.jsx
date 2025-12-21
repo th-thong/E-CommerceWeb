@@ -46,8 +46,8 @@ const HomePage = () => {
     loadProducts()
   }, [])
 
-  const handleNavigateToSeller = () => {
-    navigate("/seller")
+  const handleNavigateToSellerRegistration = () => {
+    navigate("/seller-registration")
   }
 
   const formatPrice = (price) => {
@@ -229,8 +229,8 @@ const HomePage = () => {
         <div className="cta-content">
           <h2>Bạn Là Người Bán?</h2>
           <p>Tham gia ShopLiteX và phát triển kinh doanh của bạn với là khách hàng tiềm năng</p>
-          <button className="cta-button" onClick={handleNavigateToSeller}>
-            Đi Đến Kênh Người Bán
+          <button className="cta-button" onClick={handleNavigateToSellerRegistration}>
+            Trở thành người bán ShopLiteX
           </button>
         </div>
       </section>

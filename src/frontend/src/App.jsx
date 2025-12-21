@@ -4,6 +4,7 @@ import SellerDashboard from "./pages/Seller/Dashboard/Dashboard"
 import Payment from "./pages/Public/Payment/Payment"
 import Admin from "./pages/Admin/Admin"
 import ProductPage from "./components/ProductDetail/ProductPage"
+import SellerRegistrationPage from "./pages/SellerRegistrationPage"
 import { CartProvider } from "./contexts/CartContext"
 
 const App = () => {
@@ -15,6 +16,7 @@ const App = () => {
           <Route path="/product/:productId" element={<ProductPage />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/seller" element={<SellerDashboard />} />
+          <Route path="/seller-registration" element={<SellerRegistrationPage />} />
           <Route path="/checkout" element={<Payment />} />
         </Routes>
       </CartProvider>
