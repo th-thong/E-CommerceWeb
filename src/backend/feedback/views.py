@@ -1,13 +1,14 @@
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Feedback
-from .serializers import FeedbackSerializer, NewFeedbackSerializer
+from .serializers import FeedbackSerializer, NewFeedbackSerializer, NewReplySerializer, ReplySerializer
 from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer
 from rest_framework import serializers
+from rest_framework.pagination import LimitOffsetPagination
 
 @extend_schema(
     tags=['Feedback'],
@@ -64,7 +65,7 @@ def handle_feedback(request, product_id):
         return create_feedback(request, product_id)
 
 def get_feedback(request, product_id):
-    feedbacks = Feedback.objects.filter(product_id=product_id, status='normal').order_by('-created_at')
+    feedbacks = Feedback.objects.filter(product_id=product_id, parent__isnull = True, status='normal').order_by('-created_at')
     
     if not feedbacks.exists():
         return Response([], status=status.HTTP_200_OK) 
@@ -94,3 +95,52 @@ def create_feedback(request, product_id):
             )
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET','POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated]) 
+@renderer_classes([JSONRenderer])
+def handle_reply(request,product_id,feedback_id):
+    if request.method == 'GET':
+        return get_reply(request,product_id,feedback_id)
+    elif request.method == 'POST':
+        return create_reply(request,product_id,feedback_id)
+
+def create_reply(request, product_id, feedback_id):
+    serializer = NewReplySerializer(
+        data=request.data, 
+        context={"request": request, "product_id": product_id, "feedback_id": feedback_id}
+    )
+
+    if serializer.is_valid():
+        try:
+            serializer.save()
+            return Response(
+                {"message": "Phản hồi của bạn đã được gửi."}, 
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            print(f"Error creating feedback: {e}") 
+            return Response(
+                {'message': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def get_reply(request, product_id, feedback_id):
+    try:
+        replies = Feedback.objects.filter(parent_id = feedback_id).order_by('created_at')
+
+        paginator = LimitOffsetPagination()
+        paginated_replies = paginator.paginate_queryset(replies, request)
+
+        serializer = ReplySerializer(paginated_replies, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    except Exception as e:
+        return Response(
+            {'message': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

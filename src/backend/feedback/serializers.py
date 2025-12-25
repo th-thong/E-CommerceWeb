@@ -2,12 +2,49 @@ from rest_framework import serializers
 from .models import Feedback
 from product.models import Product
 
-class FeedbackSerializer(serializers.ModelSerializer):
+
+class ReplySerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.username', read_only=True)
     user_id = serializers.CharField(source='user.id', read_only=True)
     class Meta:
         model = Feedback
-        fields = ['id', 'rating', 'review', 'user_name','user_id', 'created_at']
+        fields = ['id','review','user_name','user_id', 'created_at','parent']
+
+class NewReplySerializer(serializers.Serializer):
+    review = serializers.CharField()
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        product_id = self.context.get("product_id")
+        feedback_id = self.context.get("feedback_id")
+        user = request.user
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({"message": "Sản phẩm không tồn tại"})
+
+        try:
+            feedback = Feedback.objects.get(id=feedback_id)
+        except Product.DoesNotExist:
+                raise serializers.ValidationError({"message": "Đánh giá không tồn tại"})
+        
+        feedback = Feedback.objects.create(
+            review=validated_data['review'], 
+            parent=feedback,
+            product=product, 
+            user=user
+        )
+
+        return feedback
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.CharField(source='user.id', read_only=True)
+    items = ReplySerializer(source='replies',many = True, read_only = True)
+    class Meta:
+        model = Feedback
+        fields = ['id', 'rating', 'review', 'user_name','user_id', 'created_at','items']
 
 class NewFeedbackSerializer(serializers.Serializer):
     rating = serializers.IntegerField(min_value = 1, max_value = 5)
@@ -33,5 +70,3 @@ class NewFeedbackSerializer(serializers.Serializer):
                 user=user
             )
             return feedback
-
-    

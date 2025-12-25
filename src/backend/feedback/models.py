@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 
 class Feedback(models.Model):
-    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)], null = True, blank = True)
     review = models.TextField()
     
     STATUS_CHOICES = (
@@ -20,6 +20,15 @@ class Feedback(models.Model):
         on_delete=models.CASCADE,
         related_name='feedbacks' # product.feedbacks.all()
     )
+
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        related_name="replies",
+        on_delete=models.CASCADE
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
