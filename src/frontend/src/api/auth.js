@@ -12,7 +12,20 @@ async function postJson(url, body, accessToken) {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `Request failed with status ${res.status}`);
+    let errorMessage = `Request failed with status ${res.status}`;
+    
+    // Cố gắng parse JSON error response
+    try {
+      const errorObj = JSON.parse(text);
+      errorMessage = errorObj.error || errorObj.message || errorMessage;
+    } catch (e) {
+      // Nếu không phải JSON, dùng text trực tiếp
+      errorMessage = text || errorMessage;
+    }
+    
+    const error = new Error(errorMessage);
+    error.status = res.status;
+    throw error;
   }
 
   return res.json();
@@ -40,6 +53,14 @@ export async function getProfile(accessToken) {
   }
 
   return res.json();
+}
+
+export async function forgotPassword({ email }) {
+  return postJson(`${API_BASE}/forgot-password/`, { email });
+}
+
+export async function resetPassword({ email, otp, new_password }) {
+  return postJson(`${API_BASE}/reset-password/`, { email, otp, new_password });
 }
 
 

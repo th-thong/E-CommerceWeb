@@ -2,7 +2,7 @@
 
 import "./section.css"
 import { useState, useEffect } from "react"
-import { createSellerProduct, fetchSellerProducts, promoteProduct } from "@/api/products"
+import { createSellerProduct, fetchSellerProducts, promoteProduct, deleteSellerProduct } from "@/api/products"
 import { fetchCategories } from "@/api/categories"
 
 const TOKEN_KEY = "auth_tokens"
@@ -13,6 +13,8 @@ const ProductManagement = () => {
   const [newPrice, setNewPrice] = useState("")
   const [isPromotingProducts, setIsPromotingProducts] = useState(false)
   const [isAddingProduct, setIsAddingProduct] = useState(false)
+  const [productToDelete, setProductToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [selectedProducts, setSelectedProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(false)
@@ -339,6 +341,38 @@ const ProductManagement = () => {
     }
   }
 
+  const handleDeleteProduct = async () => {
+    if (!productToDelete) return
+
+    const savedTokens = localStorage.getItem(TOKEN_KEY)
+    if (!savedTokens) {
+      alert("Vui lòng đăng nhập")
+      return
+    }
+
+    const tokens = JSON.parse(savedTokens)
+    const accessToken = tokens?.access
+
+    if (!accessToken) {
+      alert("Vui lòng đăng nhập")
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      await deleteSellerProduct(productToDelete.product_id || productToDelete.id, accessToken)
+      alert("Xóa sản phẩm thành công!")
+      setProductToDelete(null)
+      // Refresh danh sách sản phẩm sau khi xóa
+      await loadProducts()
+    } catch (error) {
+      console.error("Error deleting product:", error)
+      alert(error.message || "Có lỗi xảy ra khi xóa sản phẩm")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <div className="section">
       <div className="section-header">
@@ -392,6 +426,21 @@ const ProductManagement = () => {
                 <td className="actions">
                   <button className="edit-btn" onClick={() => handleEditPrice(product)}>
                     Chỉnh sửa
+                  </button>
+                  <button 
+                    className="delete-btn" 
+                    onClick={() => setProductToDelete(product)}
+                    style={{ 
+                      marginLeft: "8px", 
+                      backgroundColor: "#dc3545", 
+                      color: "white",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: "4px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Xóa
                   </button>
                 </td>
               </tr>
@@ -635,6 +684,37 @@ const ProductManagement = () => {
               </button>
               <button className="save-btn" onClick={handleCreateProduct} disabled={isSubmitting}>
                 {isSubmitting ? "Đang thêm..." : "Thêm Sản Phẩm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {productToDelete && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Xác nhận xóa sản phẩm</h3>
+            <p className="product-name">
+              Bạn có chắc chắn muốn xóa sản phẩm <strong>"{productToDelete.name}"</strong>?
+            </p>
+            <p style={{ color: "#dc3545", fontSize: "14px", marginTop: "0px", marginBottom: "15px" }}>
+              Hành động này không thể hoàn tác.
+            </p>
+            <div className="modal-actions">
+              <button 
+                className="cancel-btn" 
+                onClick={() => setProductToDelete(null)}
+                disabled={isDeleting}
+              >
+                Hủy
+              </button>
+              <button 
+                className="save-btn" 
+                onClick={handleDeleteProduct}
+                disabled={isDeleting}
+                style={{ backgroundColor: "#dc3545" }}
+              >
+                {isDeleting ? "Đang xóa..." : "Xóa"}
               </button>
             </div>
           </div>
