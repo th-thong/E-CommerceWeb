@@ -1,5 +1,7 @@
 // Admin API endpoints - base path is /shopadmin/ instead of /api/
-const ADMIN_BASE = '/shopadmin';
+import { ADMIN_BASE_URL } from '../config/api';
+
+const ADMIN_BASE = ADMIN_BASE_URL;
 
 function buildHeaders(token, extraHeaders = {}) {
   return {

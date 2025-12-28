@@ -54,8 +54,18 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
         setMode("login")
       } else if (mode === "forgot-password") {
         const response = await forgotPassword({ email })
-        // Backend trả về message trong response
-        const message = response?.message || "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra email."
+        // Backend trả về message trong response - chuyển sang tiếng Việt
+        let message = response?.message || "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra email."
+        
+        // Dịch message từ backend nếu là tiếng Anh
+        if (message.includes("OTP code is being sent")) {
+          message = "Mã OTP đang được gửi đến email của bạn. Vui lòng kiểm tra hộp thư đến (và thư mục spam)."
+        } else if (message.includes("OTP code has been sent")) {
+          message = "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra email."
+        } else if (message.includes("If email exists please check email")) {
+          message = "Nếu email tồn tại, vui lòng kiểm tra email để nhận mã OTP."
+        }
+        
         setMessage(message)
         setMode("reset-password")
       } else if (mode === "reset-password") {

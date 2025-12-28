@@ -1,0 +1,9 @@
+/* Container for main pages */
+.container {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: block;
+  overflow-x: hidden;
+}
+

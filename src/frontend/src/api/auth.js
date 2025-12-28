@@ -1,4 +1,7 @@
-const API_BASE = '/api/auth';
+import { API_BASE_URL } from '../config/api';
+
+const API_BASE = `${API_BASE_URL}/auth`;
+const USERS_API_BASE = `${API_BASE_URL}/users`;
 
 async function postJson(url, body, accessToken) {
   const res = await fetch(url, {
@@ -41,7 +44,7 @@ export async function register({ user_name, email, password }) {
 }
 
 export async function getProfile(accessToken) {
-  const res = await fetch('/api/users/me/', {
+  const res = await fetch(`${USERS_API_BASE}/me/`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },

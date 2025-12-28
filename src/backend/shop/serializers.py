@@ -21,8 +21,12 @@ class ShopRegisterSerializer(serializers.ModelSerializer):
         
     def create(self, validated_data):
         shop = Shop.objects.create(**validated_data)
-        seller_group, _ = Group.objects.get_or_create(name='Seller')
-        shop.owner.groups.add(seller_group)
+        # Set user status to 'pending' - cần admin phê duyệt trước khi trở thành seller
+        shop.owner.status = 'pending'
+        shop.owner.save()
+        # KHÔNG thêm vào Seller group ngay - chỉ thêm khi admin duyệt
+        # seller_group, _ = Group.objects.get_or_create(name='Seller')
+        # shop.owner.groups.add(seller_group)
         return shop
     
     
