@@ -17,6 +17,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer, OpenApiTypes
 from rest_framework import serializers
 import pytz
+from .models import PaymentTransaction
 
 # Hàm lấy IP Client (Helper function)
 def get_client_ip(request):
@@ -124,52 +125,58 @@ class VNPAYIPNView(APIView):
         }
     )
     def get(self, request):
-            inputData = request.GET
-            if inputData:
-                vnp = vnpay()
-                vnp.responseData = inputData.dict()
-                
-                order_id = inputData.get('vnp_TxnRef')
-                vnp_amount = inputData.get('vnp_Amount')
-                vnp_ResponseCode = inputData.get('vnp_ResponseCode')
-                
-                # Validate checksum
-                if vnp.validate_response(settings.VNPAY_HASH_SECRET_KEY):
+        inputData = request.GET
+        if inputData:
+            vnp = vnpay()
+            vnp.responseData = inputData.dict()
+            
+            order_id = inputData.get('vnp_TxnRef')
+            vnp_amount = inputData.get('vnp_Amount')
+            vnp_ResponseCode = inputData.get('vnp_ResponseCode')
+            vnp_TransactionNo = inputData.get('vnp_TransactionNo')
+            
+            if vnp.validate_response(settings.VNPAY_HASH_SECRET_KEY):
+                try:
+                    order = Order.objects.get(id=order_id)
+                    pay_trans = PaymentTransaction.objects.get(transaction_no=order_id)
+                except (Order.DoesNotExist, PaymentTransaction.DoesNotExist):
+                    return Response({'RspCode': '01', 'Message': 'Order or Transaction not found'})
+
+                # Kiểm tra số tiền
+                vnp_amount_decimal = Decimal(vnp_amount) / 100
+                if order.total_price != vnp_amount_decimal:
+                    return Response({'RspCode': '04', 'Message': 'Invalid amount'})
+
+                # Kiểm tra xem đã xử lý trước đó chưa
+                if pay_trans.status != PaymentTransaction.PaymentStatus.PENDING:
+                    return Response({'RspCode': '02', 'Message': 'Order Already Updated'})
+
+                # Xử lý kết quả
+                if vnp_ResponseCode == '00':
                     try:
-                        order = Order.objects.get(id=order_id)
-                    except Order.DoesNotExist:
-                        return Response({'RspCode': '01', 'Message': 'Order not found'})
+                        with transaction.atomic():
+                            # 1. Cập nhật trạng thái thanh toán trên đơn hàng
+                            order.items.all().update(payment_status='paid')
 
-                    # Kiểm tra số tiền (VNPAY trả về amount * 100)
-                    vnp_amount_decimal = Decimal(vnp_amount) / 100
-                    if order.total_price != vnp_amount_decimal:
-                        return Response({'RspCode': '04', 'Message': 'Invalid amount'})
+                            # 2. Cập nhật bản ghi Transaction
+                            pay_trans.status = PaymentTransaction.PaymentStatus.SUCCESS
+                            pay_trans.vnp_transaction_no = vnp_TransactionNo
+                            pay_trans.raw_response = inputData.dict()
+                            pay_trans.save()
 
-                    # Kiểm tra trạng thái đơn hàng (Đã cập nhật trước đó chưa?)
-                    first_item = order.items.first()
-                    if first_item and first_item.payment_status == 'paid':
-                        return Response({'RspCode': '02', 'Message': 'Order Already Update'})
-
-                    # Xử lý kết quả giao dịch
-                    if vnp_ResponseCode == '00':
-                        # --- Giao dịch thành công ---
-                        try:
-                            with transaction.atomic():
-                                order.items.all().update(payment_status='paid')
-                                
-                            print(f"Thanh toán thành công Order {order_id}")
-                            return Response({'RspCode': '00', 'Message': 'Confirm Success'})
-                        except Exception as e:
-                            print(f"Lỗi khi update DB: {e}")
-                            return Response({'RspCode': '99', 'Message': 'Unknown error'})
-                    else:
-                        # --- Giao dịch thất bại / User hủy ---
-                        print(f"Giao dịch thất bại Order {order_id}")
                         return Response({'RspCode': '00', 'Message': 'Confirm Success'})
+                    except Exception as e:
+                        return Response({'RspCode': '99', 'Message': str(e)})
                 else:
-                    return Response({'RspCode': '97', 'Message': 'Invalid Checksum'})
+                    pay_trans.status = PaymentTransaction.PaymentStatus.FAILED
+                    pay_trans.vnp_transaction_no = vnp_TransactionNo
+                    pay_trans.raw_response = inputData.dict()
+                    pay_trans.save()
+                    
+                    return Response({'RspCode': '00', 'Message': 'Confirm Success'})
             else:
-                return Response({'RspCode': '99', 'Message': 'Invalid request'})
+                return Response({'RspCode': '97', 'Message': 'Invalid Checksum'})
+        return Response({'RspCode': '99', 'Message': 'Invalid request'})
 
 
 class VNPAYReturnView(APIView):
