@@ -42,6 +42,8 @@ const ProductManagement = () => {
       attributes: { color: "", type: "" },
     },
   ])
+  const [currentImages, setCurrentImages] = useState([])
+  const [imagesToDelete, setImagesToDelete] = useState([])
 
   const [products, setProducts] = useState([])
 
@@ -175,6 +177,8 @@ const ProductManagement = () => {
       }
 
       setSelectedProduct(productDetail)
+      setCurrentImages(productDetail.images || [])
+      setImagesToDelete([])
       setIsEditingProduct(true)
     } catch (error) {
       console.error("Error loading product detail:", error)
@@ -217,6 +221,11 @@ const ProductManagement = () => {
       formData.append("description", productForm.description)
       formData.append("discount", productForm.discount || "0")
 
+      // Gửi danh sách image IDs cần xóa
+      if (imagesToDelete.length > 0) {
+        formData.append("images_to_delete", JSON.stringify(imagesToDelete))
+      }
+
       // Only append new images if any were selected
       if (productForm.uploaded_images.length > 0) {
         productForm.uploaded_images.forEach((file) => {
@@ -239,7 +248,13 @@ const ProductManagement = () => {
       const productId = selectedProduct.product_id || selectedProduct.id
       await updateSellerProduct(productId, formData, tokens.access)
       alert("Cập nhật sản phẩm thành công!")
-      resetEditForm()
+      
+      // Reload lại product detail để cập nhật hình ảnh
+      const productDetail = await fetchSellerProductDetail(productId, tokens.access)
+      setCurrentImages(productDetail.images || [])
+      setImagesToDelete([])
+      setSelectedProduct(productDetail)
+      
       // Refresh danh sách sản phẩm sau khi cập nhật
       await loadProducts()
     } catch (error) {
@@ -253,6 +268,8 @@ const ProductManagement = () => {
   const resetEditForm = () => {
     setIsEditingProduct(false)
     setSelectedProduct(null)
+    setCurrentImages([])
+    setImagesToDelete([])
     setProductForm({
       product_name: "",
       base_price: "",
@@ -275,6 +292,13 @@ const ProductManagement = () => {
         attributes: { color: "", type: "" },
       },
     ])
+  }
+
+  const handleDeleteImage = (imageId) => {
+    // Thêm vào danh sách cần xóa
+    setImagesToDelete([...imagesToDelete, imageId])
+    // Xóa khỏi danh sách hiển thị
+    setCurrentImages(currentImages.filter(img => img.id !== imageId))
   }
 
 
@@ -623,9 +647,81 @@ const ProductManagement = () => {
                       Đã chọn {productForm.uploaded_images.length} hình ảnh mới
                     </div>
                   )}
-                  {selectedProduct.images && selectedProduct.images.length > 0 && (
-                    <div style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
-                      Hình ảnh hiện tại: {selectedProduct.images.length} hình
+                  
+                  {currentImages.length > 0 && (
+                    <div style={{ marginTop: "15px" }}>
+                      <div style={{ fontSize: "14px", marginBottom: "10px", color: "#fff" }}>
+                        Hình ảnh hiện tại ({currentImages.length} hình):
+                      </div>
+                      <div style={{ 
+                        display: "grid", 
+                        gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", 
+                        gap: "10px",
+                        marginTop: "10px"
+                      }}>
+                        {currentImages.map((image) => (
+                          <div 
+                            key={image.id} 
+                            style={{ 
+                              position: "relative",
+                              border: "1px solid rgba(255, 94, 0, 0.3)",
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                              aspectRatio: "1"
+                            }}
+                          >
+                            <img 
+                              src={image.image_url} 
+                              alt={`Image ${image.id}`}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover"
+                              }}
+                              onError={(e) => {
+                                e.target.src = "/placeholder.svg"
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteImage(image.id)}
+                              style={{
+                                position: "absolute",
+                                top: "4px",
+                                right: "4px",
+                                background: "rgba(220, 53, 69, 0.9)",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "50%",
+                                width: "24px",
+                                height: "24px",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "14px",
+                                fontWeight: "bold",
+                                transition: "all 0.2s ease"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = "rgba(220, 53, 69, 1)"
+                                e.target.style.transform = "scale(1.1)"
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = "rgba(220, 53, 69, 0.9)"
+                                e.target.style.transform = "scale(1)"
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      {imagesToDelete.length > 0 && (
+                        <div style={{ marginTop: "10px", fontSize: "12px", color: "#ff5e00" }}>
+                          {imagesToDelete.length} hình ảnh sẽ bị xóa khi lưu
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

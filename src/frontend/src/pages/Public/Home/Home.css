@@ -58,13 +58,36 @@
   -webkit-text-fill-color: transparent;
 }
 
+.recommend-section h2 {
+  background: linear-gradient(45deg, #ffd700, #ff9800);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.all-products-section h2 {
+  background: linear-gradient(45deg, #00b2ff, #4caf50);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.filtered-section h2 {
+  background: linear-gradient(45deg, #9c27b0, #e91e63);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* Products Grid */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Đảm bảo tất cả product cards có cùng kích thước */
+.promoted-section .products-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
 .product-card-link {
@@ -255,6 +278,17 @@
   border-radius: 12px;
   margin-bottom: 20px;
   background: rgba(0, 0, 0, 0.3);
+}
+
+.category-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  margin-bottom: 20px;
+  background: rgba(255, 94, 0, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 94, 0, 0.2);
 }
 
 .category-card h3 {
