@@ -68,6 +68,18 @@ export async function postFormData(path, formData, token) {
   return handleResponse(res);
 }
 
+export async function putFormData(path, formData, token) {
+  const headers = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers,
+    body: formData,
+  });
+  return handleResponse(res);
+}
+
 
 
 

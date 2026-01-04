@@ -1,4 +1,4 @@
-import { get, post, put, del, postFormData } from './client';
+import { get, post, put, del, postFormData, putFormData } from './client';
 
 // Public
 export function fetchPublicProducts() {
@@ -47,19 +47,27 @@ export function fetchSellerProducts(token) {
   return get('/products/seller/my-products/', token);
 }
 
+export function fetchSellerProductDetail(productId, token) {
+  return get(`/products/seller/my-products/${productId}/`, token);
+}
+
 export function createSellerProduct(formData, token) {
   return postFormData('/products/seller/my-products/', formData, token);
 }
 
 export function updateSellerProduct(productId, body, token) {
+  // If body is FormData, use putFormData, otherwise use regular put
+  if (body instanceof FormData) {
+    return putFormData(`/products/seller/my-products/${productId}/`, body, token);
+  }
   return put(`/products/seller/my-products/${productId}/`, body, token);
 }
 
 export function deleteSellerProduct(productId, token) {
   return del(`/products/seller/my-products/${productId}/`, token);
 }
-
 // Promote product to trendy/flash sale
 export function promoteProduct(productId, body, token) {
   return post(`/products/seller/my-products/${productId}/promote/`, body, token);
 }
+

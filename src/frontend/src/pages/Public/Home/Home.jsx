@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useCart } from "@/contexts/CartContext"
-import { fetchTrendyProducts, fetchFlashSaleProducts } from "@/api/products"
+import { fetchTrendyProducts, fetchFlashSaleProducts, fetchPublicProducts, fetchRecommendProducts } from "@/api/products"
 import "./Home.css"
 
 const TOKEN_KEY = "auth_tokens"
@@ -13,6 +13,8 @@ const HomePage = () => {
   const { addToCart } = useCart()
   const [trendyProducts, setTrendyProducts] = useState([])
   const [flashSaleProducts, setFlashSaleProducts] = useState([])
+  const [allProducts, setAllProducts] = useState([])
+  const [recommendProducts, setRecommendProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -27,14 +29,18 @@ const HomePage = () => {
         const tokens = savedTokens ? JSON.parse(savedTokens) : null
         const accessToken = tokens?.access || null
 
-        // Tải song song cả trendy và flash sale
-        const [trendyData, flashSaleData] = await Promise.all([
+        // Tải song song tất cả các loại sản phẩm
+        const [trendyData, flashSaleData, allProductsData, recommendData] = await Promise.all([
           fetchTrendyProducts(accessToken),
-          fetchFlashSaleProducts(accessToken)
+          fetchFlashSaleProducts(accessToken),
+          fetchPublicProducts(),
+          fetchRecommendProducts(accessToken)
         ])
 
         setTrendyProducts(trendyData || [])
         setFlashSaleProducts(flashSaleData || [])
+        setAllProducts(allProductsData || [])
+        setRecommendProducts(recommendData || [])
       } catch (err) {
         console.error("Error loading products:", err)
         setError(err.message || "Không thể tải sản phẩm")
@@ -183,6 +189,116 @@ const HomePage = () => {
                         <p className="sale-price">{formatPrice(salePrice)}</p>
                         <p className="original-price">{formatPrice(product.base_price)}</p>
                       </div>
+                      <div className="product-stats">
+                        <span className="rating">
+                          ⭐ {product.average_rating || 0}
+                        </span>
+                        <span className="sold">
+                          Đã bán {formatSoldCount(product.total_sold || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {recommendProducts.length > 0 && (
+        <section className="promoted-section recommend-section">
+          <h2>💡 Gợi ý Sản Phẩm</h2>
+          <div className="products-grid">
+            {recommendProducts.map((product) => {
+              const displayPrice = product.discount > 0 
+                ? product.base_price * (1 - product.discount / 100)
+                : product.base_price
+              
+              return (
+                <Link 
+                  key={product.product_id} 
+                  to={`/product/${product.product_id}`} 
+                  className="product-card-link"
+                >
+                  <div className="product-card">
+                    <div className="product-image">
+                      <img 
+                        src={product.images?.[0]?.image_url || "/placeholder.svg"} 
+                        alt={product.product_name}
+                        onError={(e) => {
+                          e.target.src = "/placeholder.svg"
+                        }}
+                      />
+                      {product.discount > 0 && (
+                        <div className="discount-badge">-{product.discount}%</div>
+                      )}
+                    </div>
+                    <div className="product-info">
+                      <h4>{product.product_name}</h4>
+                      {product.discount > 0 ? (
+                        <div className="price-section">
+                          <p className="sale-price">{formatPrice(displayPrice)}</p>
+                          <p className="original-price">{formatPrice(product.base_price)}</p>
+                        </div>
+                      ) : (
+                        <p className="product-price">{formatPrice(product.base_price)}</p>
+                      )}
+                      <div className="product-stats">
+                        <span className="rating">
+                          ⭐ {product.average_rating || 0}
+                        </span>
+                        <span className="sold">
+                          Đã bán {formatSoldCount(product.total_sold || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {allProducts.length > 0 && (
+        <section className="promoted-section all-products-section">
+          <h2>🛍️ Tất Cả Sản Phẩm</h2>
+          <div className="products-grid">
+            {allProducts.map((product) => {
+              const displayPrice = product.discount > 0 
+                ? product.base_price * (1 - product.discount / 100)
+                : product.base_price
+              
+              return (
+                <Link 
+                  key={product.product_id} 
+                  to={`/product/${product.product_id}`} 
+                  className="product-card-link"
+                >
+                  <div className="product-card">
+                    <div className="product-image">
+                      <img 
+                        src={product.images?.[0]?.image_url || "/placeholder.svg"} 
+                        alt={product.product_name}
+                        onError={(e) => {
+                          e.target.src = "/placeholder.svg"
+                        }}
+                      />
+                      {product.discount > 0 && (
+                        <div className="discount-badge">-{product.discount}%</div>
+                      )}
+                    </div>
+                    <div className="product-info">
+                      <h4>{product.product_name}</h4>
+                      {product.discount > 0 ? (
+                        <div className="price-section">
+                          <p className="sale-price">{formatPrice(displayPrice)}</p>
+                          <p className="original-price">{formatPrice(product.base_price)}</p>
+                        </div>
+                      ) : (
+                        <p className="product-price">{formatPrice(product.base_price)}</p>
+                      )}
                       <div className="product-stats">
                         <span className="rating">
                           ⭐ {product.average_rating || 0}

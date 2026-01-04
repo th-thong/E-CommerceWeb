@@ -2,7 +2,7 @@
 
 import "./section.css"
 import { useState, useEffect } from "react"
-import { createSellerProduct, fetchSellerProducts, promoteProduct, deleteSellerProduct } from "@/api/products"
+import { createSellerProduct, fetchSellerProducts, deleteSellerProduct, fetchSellerProductDetail, updateSellerProduct } from "@/api/products"
 import { fetchCategories } from "@/api/categories"
 
 const TOKEN_KEY = "auth_tokens"
@@ -10,12 +10,12 @@ const TOKEN_KEY = "auth_tokens"
 const ProductManagement = () => {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [isEditingPrice, setIsEditingPrice] = useState(false)
+  const [isEditingProduct, setIsEditingProduct] = useState(false)
   const [newPrice, setNewPrice] = useState("")
-  const [isPromotingProducts, setIsPromotingProducts] = useState(false)
   const [isAddingProduct, setIsAddingProduct] = useState(false)
+  const [isLoadingProductDetail, setIsLoadingProductDetail] = useState(false)
   const [productToDelete, setProductToDelete] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [selectedProducts, setSelectedProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(false)
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
@@ -25,6 +25,7 @@ const ProductManagement = () => {
     base_price: "",
     category: "",
     description: "",
+    discount: "",
     uploaded_images: [],
     variants_input: JSON.stringify([
       {
@@ -41,12 +42,6 @@ const ProductManagement = () => {
       attributes: { color: "", type: "" },
     },
   ])
-  const [promotionForm, setPromotionForm] = useState({
-    type: "trendy",
-    startDate: "",
-    endDate: "",
-    discount: 0,
-  })
 
   const [products, setProducts] = useState([])
 
@@ -108,10 +103,10 @@ const ProductManagement = () => {
         setIsLoadingCategories(false)
       }
     }
-    if (isAddingProduct) {
+    if (isAddingProduct || isEditingProduct) {
       loadCategories()
     }
-  }, [isAddingProduct])
+  }, [isAddingProduct, isEditingProduct])
 
   const handleEditPrice = (product) => {
     setSelectedProduct(product)
@@ -127,82 +122,161 @@ const ProductManagement = () => {
     }
   }
 
-  const handleSelectProduct = (product) => {
-    if (product.status !== "Đang bán") {
-      alert("Chỉ có thể đưa sản phẩm đã được duyệt vào Trendy/Flash Sale")
-      return
+  const handleEditProduct = async (product) => {
+    setIsLoadingProductDetail(true)
+    try {
+      const savedTokens = localStorage.getItem(TOKEN_KEY)
+      if (!savedTokens) {
+        alert("Vui lòng đăng nhập")
+        return
+      }
+      const tokens = JSON.parse(savedTokens)
+      const accessToken = tokens?.access
+      if (!accessToken) {
+        alert("Vui lòng đăng nhập")
+        return
+      }
+
+      const productDetail = await fetchSellerProductDetail(product.product_id || product.id, accessToken)
+      
+      // Handle category - could be ID or object
+      let categoryId = ""
+      if (typeof productDetail.category === 'object' && productDetail.category !== null) {
+        categoryId = productDetail.category.category_id || productDetail.category.id || ""
+      } else if (typeof productDetail.category === 'number') {
+        categoryId = productDetail.category.toString()
+      }
+      
+      // Populate form with product data
+      setProductForm({
+        product_name: productDetail.product_name || "",
+        base_price: productDetail.base_price || "",
+        category: categoryId,
+        description: productDetail.description || "",
+        discount: productDetail.discount || "",
+        uploaded_images: [], // New images will be added here
+        variants_input: JSON.stringify(productDetail.variants || []),
+      })
+
+      // Set variants from product detail
+      const productVariants = productDetail.variants || []
+      if (productVariants.length > 0) {
+        setVariants(productVariants.map(v => ({
+          price: v.price ? v.price.toString() : "",
+          quantity: v.quantity ? v.quantity.toString() : "",
+          attributes: v.attributes || { color: "", type: "" },
+        })))
+      } else {
+        setVariants([{
+          price: "",
+          quantity: "",
+          attributes: { color: "", type: "" },
+        }])
+      }
+
+      setSelectedProduct(productDetail)
+      setIsEditingProduct(true)
+    } catch (error) {
+      console.error("Error loading product detail:", error)
+      alert("Không thể tải thông tin sản phẩm: " + (error.message || "Vui lòng thử lại"))
+    } finally {
+      setIsLoadingProductDetail(false)
     }
-    setSelectedProducts((prev) =>
-      prev.find((p) => p.id === product.id) ? prev.filter((p) => p.id !== product.id) : [...prev, product],
-    )
   }
 
-  const handlePromoteProducts = async () => {
-    if (selectedProducts.length === 0) {
-      alert("Vui lòng chọn ít nhất một sản phẩm")
+  const handleUpdateProduct = async () => {
+    if (!selectedProduct) return
+
+    if (!productForm.product_name || !productForm.base_price || !productForm.category || !productForm.description) {
+      alert("Vui lòng điền đầy đủ thông tin sản phẩm")
       return
     }
-    if (!promotionForm.startDate || !promotionForm.endDate) {
-      alert("Vui lòng nhập thời gian bắt đầu và kết thúc")
-      return
-    }
-    if (promotionForm.type === "flash_sale" && promotionForm.discount <= 0) {
-      alert("Vui lòng nhập mức giảm giá hợp lệ")
+    if (variants.length === 0 || variants.some((v) => !v.price || !v.quantity)) {
+      alert("Vui lòng điền đầy đủ thông tin biến thể sản phẩm (giá, số lượng)")
       return
     }
 
-    // Lấy token
     const savedTokens = localStorage.getItem(TOKEN_KEY)
     if (!savedTokens) {
-      alert("Vui lòng đăng nhập")
+      alert("Vui lòng đăng nhập để cập nhật sản phẩm")
       return
     }
-    const tokens = JSON.parse(savedTokens)
-    const accessToken = tokens?.access
 
-    if (!accessToken) {
-      alert("Vui lòng đăng nhập")
+    const tokens = JSON.parse(savedTokens)
+    if (!tokens?.access) {
+      alert("Vui lòng đăng nhập để cập nhật sản phẩm")
       return
     }
 
     setIsSubmitting(true)
     try {
-      // Gọi API cho từng sản phẩm được chọn
-      const promotePromises = selectedProducts.map((product) => {
-        const body = {
-          is_trendy: promotionForm.type === "trendy",
-          is_flash_sale: promotionForm.type === "flash_sale",
-          promotion_start_date: promotionForm.startDate,
-          promotion_end_date: promotionForm.endDate,
-        }
-        
-        if (promotionForm.type === "flash_sale") {
-          body.discount = promotionForm.discount
-        }
-        
-        return promoteProduct(product.product_id || product.id, body, accessToken)
-      })
+      const formData = new FormData()
+      formData.append("product_name", productForm.product_name)
+      formData.append("base_price", productForm.base_price)
+      formData.append("category", productForm.category)
+      formData.append("description", productForm.description)
+      formData.append("discount", productForm.discount || "0")
 
-      await Promise.all(promotePromises)
-      
-      // Reload products để lấy dữ liệu mới nhất
+      // Only append new images if any were selected
+      if (productForm.uploaded_images.length > 0) {
+        productForm.uploaded_images.forEach((file) => {
+          formData.append("uploaded_images", file)
+        })
+      }
+
+      // Convert variants to proper format with numeric values
+      const formattedVariants = variants.map((v) => ({
+        price: Number.parseInt(v.price) || 0,
+        quantity: Number.parseInt(v.quantity) || 0,
+        attributes: {
+          color: v.attributes.color || "",
+          type: v.attributes.type || "",
+        },
+      }))
+
+      formData.append("variants_input", JSON.stringify(formattedVariants))
+
+      const productId = selectedProduct.product_id || selectedProduct.id
+      await updateSellerProduct(productId, formData, tokens.access)
+      alert("Cập nhật sản phẩm thành công!")
+      resetEditForm()
+      // Refresh danh sách sản phẩm sau khi cập nhật
       await loadProducts()
-      
-      alert("Sản phẩm đã được đưa vào Trendy/Flash Sale thành công!")
-      resetPromotionForm()
     } catch (error) {
-      console.error("Error promoting products:", error)
-      alert(error.message || "Có lỗi xảy ra khi đẩy sản phẩm lên Trendy/Flash Sale")
+      console.error("Error updating product:", error)
+      alert(`Lỗi khi cập nhật sản phẩm: ${error.message || "Vui lòng thử lại"}`)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const resetPromotionForm = () => {
-    setIsPromotingProducts(false)
-    setSelectedProducts([])
-    setPromotionForm({ type: "trendy", startDate: "", endDate: "", discount: 0 })
+  const resetEditForm = () => {
+    setIsEditingProduct(false)
+    setSelectedProduct(null)
+    setProductForm({
+      product_name: "",
+      base_price: "",
+      category: "",
+      description: "",
+      discount: "",
+      uploaded_images: [],
+      variants_input: JSON.stringify([
+        {
+          price: "",
+          quantity: "",
+          attributes: { color: "", type: "" },
+        },
+      ]),
+    })
+    setVariants([
+      {
+        price: "",
+        quantity: "",
+        attributes: { color: "", type: "" },
+      },
+    ])
   }
+
 
   const resetProductForm = () => {
     setIsAddingProduct(false)
@@ -211,6 +285,7 @@ const ProductManagement = () => {
       base_price: "",
       category: "",
       description: "",
+      discount: "",
       uploaded_images: [],
       variants_input: JSON.stringify([
         {
@@ -311,6 +386,7 @@ const ProductManagement = () => {
       formData.append("base_price", productForm.base_price)
       formData.append("category", productForm.category)
       formData.append("description", productForm.description)
+      formData.append("discount", "0")
 
       productForm.uploaded_images.forEach((file) => {
         formData.append("uploaded_images", file)
@@ -381,9 +457,6 @@ const ProductManagement = () => {
           <button className="add-product-btn" onClick={() => setIsAddingProduct(true)}>
             + Thêm Sản Phẩm
           </button>
-          <button className="promote-btn" onClick={() => setIsPromotingProducts(true)}>
-            📈 Đẩy Lên Trendy/Flash Sale
-          </button>
         </div>
       </div>
 
@@ -391,7 +464,6 @@ const ProductManagement = () => {
         <table>
           <thead>
             <tr>
-              <th style={{ width: "40px" }}></th>
               <th>Tên Sản Phẩm</th>
               <th>Giá</th>
               <th>Trạng Thái</th>
@@ -401,14 +473,6 @@ const ProductManagement = () => {
           <tbody>
             {products.map((product) => (
               <tr key={product.id}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedProducts.some((p) => p.id === product.id)}
-                    onChange={() => handleSelectProduct(product)}
-                    disabled={product.status !== "Đang bán"}
-                  />
-                </td>
                 <td>
                   {product.name}
                   {product.promoted && (
@@ -424,7 +488,7 @@ const ProductManagement = () => {
                   </span>
                 </td>
                 <td className="actions">
-                  <button className="edit-btn" onClick={() => handleEditPrice(product)}>
+                  <button className="edit-btn" onClick={() => handleEditProduct(product)}>
                     Chỉnh sửa
                   </button>
                   <button 
@@ -475,74 +539,174 @@ const ProductManagement = () => {
         </div>
       )}
 
-      {isPromotingProducts && (
+      {isEditingProduct && selectedProduct && (
         <div className="modal-overlay">
-          <div className="modal promotion-modal">
-            <h3>Đẩy Sản Phẩm Lên Trendy/Flash Sale</h3>
+          <div className="modal" style={{ maxWidth: "800px", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3>Chỉnh sửa Sản Phẩm</h3>
 
-            <div className="selected-products-list">
-              <h4>Sản phẩm được chọn ({selectedProducts.length})</h4>
-              <div className="product-chips">
-                {selectedProducts.map((p) => (
-                  <div key={p.id} className="product-chip">
-                    {p.name}
-                    <button onClick={() => handleSelectProduct(p)}>×</button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {isLoadingProductDetail ? (
+              <div style={{ padding: "20px", textAlign: "center" }}>Đang tải thông tin sản phẩm...</div>
+            ) : (
+              <>
+                <div className="input-group">
+                  <label>Tên sản phẩm *</label>
+                  <input
+                    type="text"
+                    value={productForm.product_name}
+                    onChange={(e) => setProductForm({ ...productForm, product_name: e.target.value })}
+                    placeholder="Nhập tên sản phẩm"
+                  />
+                </div>
 
-            <div className="input-group">
-              <label>Loại hiển thị</label>
-              <select
-                value={promotionForm.type}
-                onChange={(e) => setPromotionForm({ ...promotionForm, type: e.target.value })}
-              >
-                <option value="trendy">Trendy</option>
-                <option value="flash_sale">Flash Sale</option>
-              </select>
-            </div>
+                <div className="input-group">
+                  <label>Giá cơ bản (đ) *</label>
+                  <input
+                    type="number"
+                    value={productForm.base_price}
+                    onChange={(e) => setProductForm({ ...productForm, base_price: e.target.value })}
+                    placeholder="Nhập giá cơ bản"
+                  />
+                </div>
 
-            <div className="input-group">
-              <label>Thời gian bắt đầu</label>
-              <input
-                type="datetime-local"
-                value={promotionForm.startDate}
-                onChange={(e) => setPromotionForm({ ...promotionForm, startDate: e.target.value })}
-              />
-            </div>
+                <div className="input-group">
+                  <label>Giảm giá (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={productForm.discount}
+                    onChange={(e) => setProductForm({ ...productForm, discount: e.target.value })}
+                    placeholder="Nhập phần trăm giảm giá (0-100)"
+                    className="discount-input"
+                  />
+                  {productForm.discount && Number.parseInt(productForm.discount) >= 50 && (
+                    <div style={{ marginTop: "8px", fontSize: "12px", color: "#00b2ff" }}>
+                      ⚡ Sản phẩm này sẽ được hiển thị trong Flash Sale
+                    </div>
+                  )}
+                </div>
 
-            <div className="input-group">
-              <label>Thời gian kết thúc</label>
-              <input
-                type="datetime-local"
-                value={promotionForm.endDate}
-                onChange={(e) => setPromotionForm({ ...promotionForm, endDate: e.target.value })}
-              />
-            </div>
+                <div className="input-group">
+                  <label>Danh mục *</label>
+                  {isLoadingCategories ? (
+                    <div>Đang tải danh mục...</div>
+                  ) : (
+                    <select
+                      value={productForm.category}
+                      onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                    >
+                      <option value="">Chọn danh mục</option>
+                      {categories.map((cat) => (
+                        <option key={cat.category_id} value={cat.category_id}>
+                          {cat.category_name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
 
-            {promotionForm.type === "flash_sale" && (
-              <div className="input-group">
-                <label>Mức giảm giá (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={promotionForm.discount}
-                  onChange={(e) => setPromotionForm({ ...promotionForm, discount: Number.parseInt(e.target.value) })}
-                  placeholder="Nhập mức giảm giá"
-                />
-              </div>
+                <div className="input-group">
+                  <label>Mô tả *</label>
+                  <textarea
+                    value={productForm.description}
+                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                    placeholder="Nhập mô tả sản phẩm"
+                    rows="4"
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label>Hình ảnh mới (tùy chọn)</label>
+                  <input type="file" multiple accept="image/*" onChange={handleImageChange} />
+                  {productForm.uploaded_images.length > 0 && (
+                    <div style={{ marginTop: "10px", fontSize: "14px" }}>
+                      Đã chọn {productForm.uploaded_images.length} hình ảnh mới
+                    </div>
+                  )}
+                  {selectedProduct.images && selectedProduct.images.length > 0 && (
+                    <div style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
+                      Hình ảnh hiện tại: {selectedProduct.images.length} hình
+                    </div>
+                  )}
+                </div>
+
+                <div className="input-group">
+                  <label>
+                    Biến thể sản phẩm *
+                    <button
+                      type="button"
+                      onClick={addVariant}
+                      style={{ marginLeft: "10px", padding: "5px 10px", fontSize: "12px" }}
+                    >
+                      + Thêm biến thể
+                    </button>
+                  </label>
+                  {variants.map((variant, index) => (
+                    <div key={index} style={{ border: "1px solid #ddd", padding: "10px", marginBottom: "10px", borderRadius: "4px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                        <strong>Biến thể {index + 1}</strong>
+                        {variants.length > 1 && (
+                          <button type="button" onClick={() => removeVariant(index)} style={{ color: "red" }}>
+                            Xóa
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                        <div>
+                          <label style={{ fontSize: "12px" }}>Giá (đ) *</label>
+                          <input
+                            type="number"
+                            value={variant.price}
+                            onChange={(e) => handleVariantChange(index, "price", e.target.value)}
+                            placeholder="Giá"
+                            style={{ width: "100%" }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: "12px" }}>Số lượng *</label>
+                          <input
+                            type="number"
+                            value={variant.quantity}
+                            onChange={(e) => handleVariantChange(index, "quantity", e.target.value)}
+                            placeholder="Số lượng"
+                            style={{ width: "100%" }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: "12px" }}>Màu sắc</label>
+                          <input
+                            type="text"
+                            value={variant.attributes.color}
+                            onChange={(e) => handleVariantChange(index, "attributes.color", e.target.value)}
+                            placeholder="Màu sắc"
+                            style={{ width: "100%" }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: "12px" }}>Loại/Kích cỡ</label>
+                          <input
+                            type="text"
+                            value={variant.attributes.type}
+                            onChange={(e) => handleVariantChange(index, "attributes.type", e.target.value)}
+                            placeholder="Loại/Kích cỡ"
+                            style={{ width: "100%" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="modal-actions">
+                  <button className="cancel-btn" onClick={resetEditForm} disabled={isSubmitting}>
+                    Hủy
+                  </button>
+                  <button className="save-btn" onClick={handleUpdateProduct} disabled={isSubmitting}>
+                    {isSubmitting ? "Đang cập nhật..." : "Cập Nhật Sản Phẩm"}
+                  </button>
+                </div>
+              </>
             )}
-
-            <div className="modal-actions">
-              <button className="cancel-btn" onClick={resetPromotionForm}>
-                Hủy
-              </button>
-              <button className="save-btn" onClick={handlePromoteProducts}>
-                Xác Nhận Đẩy Lên
-              </button>
-            </div>
           </div>
         </div>
       )}
