@@ -5,7 +5,7 @@ from rest_framework.renderers import JSONRenderer
 from http.client import HTTPResponse
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import CODSerializers
+from ..serializers import CODSerializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from drf_spectacular.utils import extend_schema, inline_serializer

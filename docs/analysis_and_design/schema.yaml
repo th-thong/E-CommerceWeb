@@ -486,41 +486,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/CODNotFoundResponse'
           description: ''
-  /api/payment/vnpay/create-payment-url/:
-    post:
-      operationId: api_payment_vnpay_create_payment_url_create
-      description: Gửi thông tin đơn hàng (ID, số tiền) để nhận về đường link chuyển
-        hướng sang cổng thanh toán VNPAY.
-      summary: Tạo URL thanh toán VNPAY
-      tags:
-      - Payment
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePayment'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CreatePayment'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CreatePayment'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VNPAYUrlResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VNPAYCreateError'
-          description: ''
   /api/payment/vnpay/query/:
     post:
       operationId: api_payment_vnpay_query_create
@@ -1509,28 +1474,6 @@ components:
       required:
       - category_id
       - category_name
-    CreatePayment:
-      type: object
-      properties:
-        amount:
-          type: integer
-          description: Số tiền (VND)
-        order_desc:
-          type: string
-          default: ''
-          description: Nội dung thanh toán
-        bank_code:
-          type: string
-          description: Mã ngân hàng (NCB, VCB...)
-        language:
-          type: string
-          default: vn
-          description: Ngôn ngữ (vn/en)
-        order_id:
-          type: string
-          description: Mã đơn hàng unique
-      required:
-      - amount
     DeleteError:
       type: object
       properties:
@@ -1963,6 +1906,8 @@ components:
             type: string
           writeOnly: true
         variants_input:
+          writeOnly: true
+        images_to_delete:
           writeOnly: true
       required:
       - category
@@ -2416,13 +2361,6 @@ components:
       - email
       - password
       - user_name
-    VNPAYCreateError:
-      type: object
-      properties:
-        detail:
-          type: string
-      required:
-      - detail
     VNPAYQueryRequest:
       type: object
       properties:
@@ -2451,15 +2389,6 @@ components:
       required:
       - message
       - order_id
-      - payment_url
-    VNPAYUrlResponse:
-      type: object
-      properties:
-        payment_url:
-          type: string
-          format: uri
-          description: Đường dẫn redirect sang VNPAY
-      required:
       - payment_url
   securitySchemes:
     basicAuth:

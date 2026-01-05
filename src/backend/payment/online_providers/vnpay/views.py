@@ -7,95 +7,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .payment_provider.vnpay import vnpay 
-from .serializers import CreatePaymentSerializer
+from .vnpay import VNPAYProvider 
 from order.models import Order
 from decimal import Decimal
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from drf_spectacular.utils import extend_schema, OpenApiParameter, inline_serializer, OpenApiTypes
 from rest_framework import serializers
 import pytz
-from .models import PaymentTransaction
-
-# Hàm lấy IP Client (Helper function)
-def get_client_ip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
-
-class VNPAYCreatePaymentView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
-
-    @extend_schema(
-        tags=['Payment'],
-        summary="Tạo URL thanh toán VNPAY",
-        description="Gửi thông tin đơn hàng (ID, số tiền) để nhận về đường link chuyển hướng sang cổng thanh toán VNPAY.",
-        request=CreatePaymentSerializer,
-        responses={
-            200: inline_serializer(
-                name='VNPAYUrlResponse',
-                fields={'payment_url': serializers.URLField(help_text="Đường dẫn redirect sang VNPAY")}
-            ),
-            400: inline_serializer(
-                name='VNPAYCreateError',
-                fields={'detail': serializers.CharField()}
-            )
-        }
-    )
-    def post(self, request):
-        serializer = CreatePaymentSerializer(data=request.data)
-        if serializer.is_valid():
-            data = serializer.validated_data
-            
-            # 1. Lấy thông tin từ request
-            order_type = 'billpayment'
-            order_id = data.get('order_id')
-            amount = data['amount']
-            bank_code = data.get('bank_code', '')
-            language = data.get('language', 'vn')
-            ipaddr = get_client_ip(request)
-
-            # 2. Build URL Payment
-            vnp = vnpay()
-            vnp.requestData['vnp_Version'] = '2.1.0'
-            vnp.requestData['vnp_Command'] = 'pay'
-            vnp.requestData['vnp_TmnCode'] = settings.VNPAY_TMN_CODE
-            vnp.requestData['vnp_Amount'] = int(amount * 100) # VNPAY yêu cầu nhân 100
-            vnp.requestData['vnp_CurrCode'] = 'VND'
-            vnp.requestData['vnp_TxnRef'] = order_id
-            vnp.requestData['vnp_OrderInfo'] = f"Thanh toan don hang {order_id}"
-            vnp.requestData['vnp_OrderType'] = order_type
-            
-            if language:
-                vnp.requestData['vnp_Locale'] = language
-            else:
-                vnp.requestData['vnp_Locale'] = 'vn'
-                
-            if bank_code:
-                vnp.requestData['vnp_BankCode'] = bank_code
-
-            tz_vietnam = pytz.timezone('Asia/Ho_Chi_Minh')
-            curr_date = datetime.now(tz_vietnam)
-            vnp.requestData['vnp_CreateDate'] = curr_date.strftime('%Y%m%d%H%M%S')
-            if ipaddr:
-                vnp.requestData['vnp_IpAddr'] = ipaddr
-            else:
-                vnp.requestData['vnp_IpAddr'] = '127.0.0.1'
-            vnp.requestData['vnp_ReturnUrl'] = settings.VNPAY_RETURN_URL
-
-            # 3. Tạo URL
-            payment_url = vnp.get_payment_url(settings.VNPAY_PAYMENT_URL, settings.VNPAY_HASH_SECRET_KEY)
-            
-            return Response({'payment_url': payment_url}, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+from ...models import PaymentTransaction
+from payment.utils import get_client_ip
 
 class VNPAYIPNView(APIView):
     """
@@ -127,7 +48,7 @@ class VNPAYIPNView(APIView):
     def get(self, request):
         inputData = request.GET
         if inputData:
-            vnp = vnpay()
+            vnp = VNPAYProvider()
             vnp.responseData = inputData.dict()
             
             order_id = inputData.get('vnp_TxnRef')
@@ -209,7 +130,7 @@ class VNPAYReturnView(APIView):
     def get(self, request):
         inputData = request.GET
         if inputData:
-            vnp = vnpay()
+            vnp = VNPAYProvider()
             vnp.responseData = inputData.dict()
             
             if vnp.validate_response(settings.VNPAY_HASH_SECRET_KEY):
