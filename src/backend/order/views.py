@@ -10,9 +10,9 @@ from rest_framework import serializers
 from .models import Order, OrderDetail
 from .permissions import IsSeller
 from shop.models import Shop
-from payment.utils import create_vnpay_payment_url
 from payment.models import PaymentTransaction
 from django.db import transaction
+from payment.payment_factory import PaymentFactory
 
 
 @extend_schema(
@@ -94,33 +94,30 @@ def create_new_order(request):
                 order = serializer.save()
                 payment_type = serializer.validated_data.get('payment_type', 'COD')
 
-                if payment_type == 'VNPAY':
-                    PaymentTransaction.objects.create(
-                        order=order,
-                        amount=order.total_price,
-                        transaction_no=str(order.id),
-                        status=PaymentTransaction.PaymentStatus.PENDING,
-                        payment_source='VNPAY'
-                    )
+                try:
+                    provider = PaymentFactory.get_provider(payment_type)
+                except ValueError as e:
+                    return Response({"error": str(e)}, status=400)
 
-                    try:
-                        payment_url = create_vnpay_payment_url(order, request)
-                        return Response({
-                                "message": "Đơn hàng đã tạo. Vui lòng thanh toán.",
-                                "order_id": order.id,
-                                "payment_type": "VNPAY",
-                                "payment_url": payment_url
-                            }, status=status.HTTP_200_OK)
-                    except Exception as e:
-                        return Response({"error": f"Lỗi tạo link VNPAY: {str(e)}"}, status=400)
+
+                provider.save_transaction(order, payment_type)
                 
-                else:
+                payment_url = provider.get_payment_url(order, request)
+                if payment_url:
                     return Response({
-                        "message": "Đặt hàng thành công",
+                        "message": "Đơn hàng đã tạo. Vui lòng thanh toán.",
                         "order_id": order.id,
-                        "payment_type": "COD",
-                        "data": OrderSerializer(order).data
-                    }, status=status.HTTP_201_CREATED)
+                        "payment_type": payment_type,
+                        "payment_url": payment_url
+                    }, status=status.HTTP_200_OK)
+            
+                return Response({
+                    "message": "Đặt hàng thành công (COD)",
+                    "order_id": order.id,
+                    "payment_type": "COD",
+                    "data": OrderSerializer(order).data
+                }, status=status.HTTP_201_CREATED)
+
 
         except Exception as e:
             return Response({
