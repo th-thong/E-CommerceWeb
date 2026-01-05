@@ -76,6 +76,12 @@
   -webkit-text-fill-color: transparent;
 }
 
+.search-results-section h2 {
+  background: linear-gradient(45deg, #00b2ff, #4caf50);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* Products Grid */
 .products-grid {
   display: grid;
@@ -394,10 +400,32 @@
   margin-bottom: 20px;
 }
 
+/* Ẩn spinner cho input number */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .home-page {
     padding: 100px 20px 40px;
+  }
+
+  .filtered-section > div:last-child {
+    flex-direction: column;
+  }
+
+  .filtered-section > div:last-child > div:first-child {
+    width: 100%;
+    max-width: 100%;
   }
 
   .hero-banner h1 {

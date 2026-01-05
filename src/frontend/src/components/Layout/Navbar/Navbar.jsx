@@ -1,5 +1,5 @@
 import "./Navbar.css";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AuthModal from "@/components/Common/AuthModal/AuthModal";
 import { getProfile } from "@/api/auth";
@@ -10,10 +10,12 @@ const TOKEN_KEY = "auth_tokens";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [cartOpen, setCartOpen] = useState(false);
   const [showSellerModal, setShowSellerModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { getTotalItems } = useCart();
   const [tokens, setTokens] = useState(() => {
     const saved = localStorage.getItem(TOKEN_KEY);
@@ -45,6 +47,18 @@ const Navbar = () => {
     };
     fetchProfile();
   }, [tokens]);
+
+  // Đồng bộ searchQuery với URL params
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    } else {
+      // Nếu không có search param trong URL, xóa searchQuery
+      setSearchQuery("");
+    }
+  }, [location.search]);
 
   const handleAuthSuccess = (data) => {
     setTokens(data);
@@ -90,6 +104,22 @@ const Navbar = () => {
     setShowSellerModal(false);
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to home với search query
+      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      // Scroll to top để xem kết quả
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch(e);
+    }
+  };
+
   return (
     <>
       <header className="navbar">
@@ -116,10 +146,16 @@ const Navbar = () => {
               </div>
             </Link>
 
-            <div className="search-bar">
-              <input type="text" placeholder="Tìm kiếm sản phẩm..." />
-              <button className="search-btn">🔍</button>
-            </div>
+            <form className="search-bar" onSubmit={handleSearch}>
+              <input 
+                type="text" 
+                placeholder="Tìm kiếm sản phẩm..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
+              />
+              <button type="submit" className="search-btn">🔍</button>
+            </form>
 
             <button className="btn cart-btn" onClick={() => setCartOpen(true)}>
               🛒 <span className="cart-count">{getTotalItems()}</span>
