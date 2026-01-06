@@ -38,9 +38,9 @@ export async function login({ email, password }) {
   return postJson(`${API_BASE}/login/`, { email, password });
 }
 
-export async function register({ user_name, email, password }) {
-  // Backend expects user_name (mapped to username), email, password
-  return postJson(`${API_BASE}/register/`, { user_name, email, password });
+export async function register({ user_name, email, password, phone_number }) {
+  // Backend expects user_name (mapped to username), email, password, optional phone_number
+  return postJson(`${API_BASE}/register/`, { user_name, email, password, phone_number });
 }
 
 export async function getProfile(accessToken) {

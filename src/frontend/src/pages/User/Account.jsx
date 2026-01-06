@@ -154,7 +154,7 @@ const Account = () => {
                       placeholder="Nhập số điện thoại"
                     />
                   ) : (
-                    <span>{profile.phone_number || "Chưa cập nhật"}</span>
+                    <span>{profile.shop_phone_number || profile.phone_number || "Chưa cập nhật"}</span>
                   )}
                 </div>
 
