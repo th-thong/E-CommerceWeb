@@ -4,7 +4,6 @@ import "./AdminSidebar.css"
 
 const AdminSidebar = ({ activeMenu, setActiveMenu }) => {
   const mainItems = [
-    { id: "overview", label: "Tổng quan hệ thống", icon: "🛡️" },
     { id: "users", label: "Quản lý tài khoản", icon: "👥" },
     { id: "products", label: "Duyệt sản phẩm", icon: "🛒" },
     { id: "content", label: "Kiểm duyệt nội dung", icon: "📝" },

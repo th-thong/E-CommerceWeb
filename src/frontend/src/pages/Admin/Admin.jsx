@@ -2,10 +2,11 @@ import BackgroundAnimation from "@/components/Common/BackgroundAnimation/Backgro
 import Navbar from "@/components/Layout/Navbar/Navbar"
 import AdminSidebar from "@/components/Layout/AdminSidebar/AdminSidebar"
 import AdminMainContent from "@/components/Admin/AdminMainContent"
+import "@/pages/Seller/Dashboard/Dashboard.css"
 import { useState } from "react"
 
 const Admin = () => {
-  const [activeMenu, setActiveMenu] = useState("overview")
+  const [activeMenu, setActiveMenu] = useState("users")
 
   return (
     <div className="container">
