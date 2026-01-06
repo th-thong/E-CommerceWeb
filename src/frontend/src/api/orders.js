@@ -1,5 +1,11 @@
 import { get } from './client';
 
+// User - lấy lịch sử mua hàng
+// GET /api/orders/
+export function getOrderHistory(token) {
+  return get('/orders/', token);
+}
+
 // Seller - orders for current shop
 // GET /api/orders/my-shop/
 export function fetchMyShopOrders(token) {

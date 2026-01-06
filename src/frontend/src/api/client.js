@@ -1,4 +1,6 @@
-const API_BASE = '/api';
+import { API_BASE_URL } from '../config/api';
+
+const API_BASE = API_BASE_URL;
 
 function buildHeaders(token, extraHeaders = {}) {
   return {
@@ -60,6 +62,18 @@ export async function postFormData(path, formData, token) {
   };
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
+    headers,
+    body: formData,
+  });
+  return handleResponse(res);
+}
+
+export async function putFormData(path, formData, token) {
+  const headers = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
     headers,
     body: formData,
   });

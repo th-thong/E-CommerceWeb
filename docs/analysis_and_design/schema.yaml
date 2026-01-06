@@ -272,6 +272,47 @@ paths:
               schema:
                 $ref: '#/components/schemas/FeedbackError'
           description: ''
+  /api/feedback/{product_id}/{feedback_id}/:
+    get:
+      operationId: api_feedback_retrieve
+      parameters:
+      - in: path
+        name: feedback_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: api_feedback_create_2
+      parameters:
+      - in: path
+        name: feedback_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/orders/:
     get:
       operationId: api_orders_list
@@ -445,85 +486,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/CODNotFoundResponse'
           description: ''
-  /api/payment/vnpay/create-payment-url/:
-    post:
-      operationId: api_payment_vnpay_create_payment_url_create
-      description: Gửi thông tin đơn hàng (ID, số tiền) để nhận về đường link chuyển
-        hướng sang cổng thanh toán VNPAY.
-      summary: Tạo URL thanh toán VNPAY
-      tags:
-      - Payment
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePayment'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CreatePayment'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CreatePayment'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VNPAYUrlResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VNPAYCreateError'
-          description: ''
-  /api/payment/vnpay/ipn/:
-    get:
-      operationId: api_payment_vnpay_ipn_retrieve
-      description: API này chỉ dành cho Server VNPAY gọi tự động để cập nhật trạng
-        thái đơn hàng (Pending -> Paid). Người dùng không gọi trực tiếp.
-      summary: IPN (Webhook từ VNPAY)
-      parameters:
-      - in: query
-        name: vnp_Amount
-        schema:
-          type: string
-        description: Số tiền (đã nhân 100)
-        required: true
-      - in: query
-        name: vnp_ResponseCode
-        schema:
-          type: string
-        description: Mã phản hồi (00 là thành công)
-        required: true
-      - in: query
-        name: vnp_SecureHash
-        schema:
-          type: string
-        description: Mã kiểm tra toàn vẹn
-        required: true
-      - in: query
-        name: vnp_TxnRef
-        schema:
-          type: string
-        description: Mã đơn hàng (Order ID)
-        required: true
-      tags:
-      - Payment
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IPNResponse'
-          description: ''
   /api/payment/vnpay/query/:
     post:
       operationId: api_payment_vnpay_query_create
@@ -589,6 +551,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReturnSuccess'
+          description: ''
+  /api/payment/vnpay_ipn/:
+    get:
+      operationId: api_payment_vnpay_ipn_retrieve
+      description: API này chỉ dành cho Server VNPAY gọi tự động để cập nhật trạng
+        thái đơn hàng (Pending -> Paid). Người dùng không gọi trực tiếp.
+      summary: IPN (Webhook từ VNPAY)
+      parameters:
+      - in: query
+        name: vnp_Amount
+        schema:
+          type: string
+        description: Số tiền (đã nhân 100)
+        required: true
+      - in: query
+        name: vnp_ResponseCode
+        schema:
+          type: string
+        description: Mã phản hồi (00 là thành công)
+        required: true
+      - in: query
+        name: vnp_SecureHash
+        schema:
+          type: string
+        description: Mã kiểm tra toàn vẹn
+        required: true
+      - in: query
+        name: vnp_TxnRef
+        schema:
+          type: string
+        description: Mã đơn hàng (Order ID)
+        required: true
+      tags:
+      - Payment
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IPNResponse'
           description: ''
   /api/products/public/{product_id}/:
     get:
@@ -1011,7 +1017,7 @@ paths:
     get:
       operationId: api_shops_my_shop_retrieve
       description: Trả về thông tin chi tiết Shop của User đang đăng nhập.
-      summary: Lấy thông tin shop của tôi
+      summary: Lấy thông tin Shop của tôi
       tags:
       - Shop
       security:
@@ -1022,11 +1028,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Shop'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopNotFound'
           description: ''
     post:
       operationId: api_shops_my_shop_create
       description: Đăng ký mở Shop bán hàng. Mỗi User chỉ được tạo duy nhất 1 Shop.
-      summary: Đăng ký shop mới
+      summary: Đăng ký Shop mới
       tags:
       - Shop
       requestBody:
@@ -1040,6 +1052,39 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/ShopRegister'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopCreateSuccess'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopCreateError'
+          description: ''
+    put:
+      operationId: api_shops_my_shop_update
+      description: Cho phép User chỉnh sửa thông tin Shop (Tên, mô tả, địa chỉ...).
+      summary: Cập nhật thông tin Shop
+      tags:
+      - Shop
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Shop'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Shop'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Shop'
         required: true
       security:
       - jwtAuth: []
@@ -1050,24 +1095,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/Shop'
           description: ''
-    put:
-      operationId: api_shops_my_shop_update
-      description: Cho phép User chỉnh sửa thông tin Shop (Tên, mô tả, địa chỉ...).
-      summary: Cập nhật thông tin shop
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopUpdateError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopNotFoundUpdate'
+          description: ''
+  /api/shops/my-shop/orders/{detail_id}/update/:
+    patch:
+      operationId: api_shops_my_shop_orders_update_partial_update
+      description: Dành cho Shop. Cập nhật trạng thái xử lý (Pending -> Confirmed
+        -> Shipped) hoặc thanh toán.
+      summary: Cập nhật trạng thái đơn hàng
+      parameters:
+      - in: path
+        name: detail_id
+        schema:
+          type: integer
+        required: true
       tags:
-      - Shop
+      - Order (Seller)
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChangeShopInfo'
+              $ref: '#/components/schemas/PatchedUpdateOrderStatus'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ChangeShopInfo'
+              $ref: '#/components/schemas/PatchedUpdateOrderStatus'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ChangeShopInfo'
-        required: true
+              $ref: '#/components/schemas/PatchedUpdateOrderStatus'
       security:
       - jwtAuth: []
       responses:
@@ -1075,7 +1139,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Shop'
+                $ref: '#/components/schemas/UpdateStatusSuccess'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
           description: ''
   /api/users/me/:
     get:
@@ -1398,35 +1474,6 @@ components:
       required:
       - category_id
       - category_name
-    ChangeShopInfo:
-      type: object
-      properties:
-        shop_name:
-          type: string
-      required:
-      - shop_name
-    CreatePayment:
-      type: object
-      properties:
-        amount:
-          type: integer
-          description: Số tiền (VND)
-        order_desc:
-          type: string
-          default: ''
-          description: Nội dung thanh toán
-        bank_code:
-          type: string
-          description: Mã ngân hàng (NCB, VCB...)
-        language:
-          type: string
-          default: vn
-          description: Ngôn ngữ (vn/en)
-        order_id:
-          type: string
-          description: Mã đơn hàng unique
-      required:
-      - amount
     DeleteError:
       type: object
       properties:
@@ -1454,10 +1501,12 @@ components:
           type: integer
           readOnly: true
         rating:
-          allOf:
-          - $ref: '#/components/schemas/RatingEnum'
+          nullable: true
           minimum: -2147483648
           maximum: 2147483647
+          oneOf:
+          - $ref: '#/components/schemas/RatingEnum'
+          - $ref: '#/components/schemas/NullEnum'
         review:
           type: string
         user_name:
@@ -1470,10 +1519,15 @@ components:
           type: string
           format: date-time
           readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reply'
+          readOnly: true
       required:
       - created_at
       - id
-      - rating
+      - items
       - review
       - user_id
       - user_name
@@ -1490,6 +1544,13 @@ components:
         message:
           type: string
           default: Cảm ơn bạn! Đánh giá của bạn đã được gửi.
+    Forbidden:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
     ForgotPasswordError:
       type: object
       properties:
@@ -1597,6 +1658,16 @@ components:
           type: string
       required:
       - message
+    NotFound:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    NullEnum:
+      enum:
+      - null
     Order:
       type: object
       properties:
@@ -1682,6 +1753,7 @@ components:
           readOnly: true
         order_status:
           type: string
+          description: Lấy trạng thái đại diện cho đơn hàng
           readOnly: true
         items:
           type: array
@@ -1711,7 +1783,8 @@ components:
           type: string
           readOnly: true
         variant:
-          type: string
+          type: object
+          additionalProperties: {}
           readOnly: true
         quantity:
           type: integer
@@ -1760,6 +1833,13 @@ components:
       required:
       - details
       - message
+    PatchedUpdateOrderStatus:
+      type: object
+      properties:
+        order_status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
     PaymentStatusEnum:
       enum:
       - paid
@@ -1826,6 +1906,8 @@ components:
             type: string
           writeOnly: true
         variants_input:
+          writeOnly: true
+        images_to_delete:
           writeOnly: true
       required:
       - category
@@ -1923,6 +2005,33 @@ components:
           default: Successfully created account
       required:
       - message
+    Reply:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        review:
+          type: string
+        user_name:
+          type: string
+          readOnly: true
+        user_id:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        parent:
+          type: integer
+          nullable: true
+      required:
+      - created_at
+      - id
+      - review
+      - user_id
+      - user_name
     ResetPasswordError:
       type: object
       properties:
@@ -1984,10 +2093,35 @@ components:
         owner:
           type: integer
           readOnly: true
+        shop_phone_number:
+          type: string
+          maxLength: 20
+        shop_address:
+          type: string
+          maxLength: 200
+        shop_email:
+          type: string
+          format: email
+          maxLength: 254
+        description:
+          type: string
       required:
       - owner
+      - shop_email
       - shop_id
       - shop_name
+    ShopCreateError:
+      type: object
+      properties:
+        error:
+          type: string
+          default: You cannot create more shops
+    ShopCreateSuccess:
+      type: object
+      properties:
+        message:
+          type: string
+          default: Successfully created shop
     ShopError:
       type: object
       properties:
@@ -2002,6 +2136,13 @@ components:
           type: string
       required:
       - message
+    ShopNotFoundUpdate:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
     ShopOrderDetail:
       type: object
       properties:
@@ -2029,9 +2170,11 @@ components:
           readOnly: true
         product_image:
           type: string
+          description: Lấy ảnh đầu tiên của sản phẩm làm ảnh đại diện
           readOnly: true
         variant:
-          type: string
+          type: object
+          additionalProperties: {}
           readOnly: true
         quantity:
           type: integer
@@ -2042,7 +2185,8 @@ components:
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         subtotal:
-          type: string
+          type: number
+          format: double
           readOnly: true
         order_status:
           $ref: '#/components/schemas/OrderStatusEnum'
@@ -2069,7 +2213,20 @@ components:
         shop_name:
           type: string
           maxLength: 45
+        shop_phone_number:
+          type: string
+          maxLength: 20
+        shop_address:
+          type: string
+          maxLength: 200
+        shop_email:
+          type: string
+          format: email
+          maxLength: 254
+        description:
+          type: string
       required:
+      - shop_email
       - shop_name
     ShopSystemError:
       type: object
@@ -2081,6 +2238,13 @@ components:
       required:
       - details
       - message
+    ShopUpdateError:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
     StatusEnum:
       enum:
       - active
@@ -2110,12 +2274,29 @@ components:
           type: string
       required:
       - error
+    UpdateOrderStatus:
+      type: object
+      properties:
+        order_status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
     UpdateProfileError:
       type: object
       properties:
         error:
           type: string
           default: Bad Request / Update Failed
+    UpdateStatusSuccess:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/UpdateOrderStatus'
+      required:
+      - data
+      - message
     UpdateUserRequest:
       type: object
       properties:
@@ -2180,13 +2361,6 @@ components:
       - email
       - password
       - user_name
-    VNPAYCreateError:
-      type: object
-      properties:
-        detail:
-          type: string
-      required:
-      - detail
     VNPAYQueryRequest:
       type: object
       properties:
@@ -2215,15 +2389,6 @@ components:
       required:
       - message
       - order_id
-      - payment_url
-    VNPAYUrlResponse:
-      type: object
-      properties:
-        payment_url:
-          type: string
-          format: uri
-          description: Đường dẫn redirect sang VNPAY
-      required:
       - payment_url
   securitySchemes:
     basicAuth:

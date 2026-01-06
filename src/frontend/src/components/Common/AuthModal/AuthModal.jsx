@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import "./AuthModal.css"
-import { login, register } from "@/api/auth"
+import { login, register, forgotPassword, resetPassword } from "@/api/auth"
 
 export default function AuthModal({ isOpen, onClose, initialMode = "login", onModeChange, onAuthSuccess }) {
   const [mode, setMode] = useState(initialMode)
@@ -11,6 +11,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
   const [confirmPassword, setConfirmPassword] = useState("")
   const [username, setUsername] = useState("")
   const [phone, setPhone] = useState("")
+  const [otp, setOtp] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const [message, setMessage] = useState(null)
@@ -24,6 +25,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
       setConfirmPassword("")
       setUsername("")
       setPhone("")
+      setOtp("")
       setError(null)
       setMessage(null)
     }
@@ -51,7 +53,43 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
         setMessage("Đăng ký thành công, vui lòng đăng nhập")
         setMode("login")
       } else if (mode === "forgot-password") {
-        setError("Chức năng đặt lại mật khẩu chưa hỗ trợ")
+        const response = await forgotPassword({ email })
+        // Backend trả về message trong response - chuyển sang tiếng Việt
+        let message = response?.message || "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra email."
+        
+        // Dịch message từ backend nếu là tiếng Anh
+        if (message.includes("OTP code is being sent")) {
+          message = "Mã OTP đang được gửi đến email của bạn. Vui lòng kiểm tra hộp thư đến (và thư mục spam)."
+        } else if (message.includes("OTP code has been sent")) {
+          message = "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra email."
+        } else if (message.includes("If email exists please check email")) {
+          message = "Nếu email tồn tại, vui lòng kiểm tra email để nhận mã OTP."
+        }
+        
+        setMessage(message)
+        setMode("reset-password")
+      } else if (mode === "reset-password") {
+        if (!otp || otp.length !== 6) {
+          setError("Vui lòng nhập mã OTP 6 số")
+          return
+        }
+        if (password.length < 8) {
+          setError("Mật khẩu phải có ít nhất 8 ký tự")
+          return
+        }
+        if (password !== confirmPassword) {
+          setError("Mật khẩu không khớp")
+          return
+        }
+        const response = await resetPassword({ email, otp, new_password: password })
+        const message = response?.message || "Đặt lại mật khẩu thành công! Vui lòng đăng nhập."
+        setMessage(message)
+        setTimeout(() => {
+          setMode("login")
+          setPassword("")
+          setConfirmPassword("")
+          setOtp("")
+        }, 2000)
       }
     } catch (err) {
       const rawMsg = err?.message || ""
@@ -62,6 +100,19 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
         friendly = "Tài khoản của bạn đã bị khóa do vi phạm"
       } else if (rawMsg.toLowerCase().includes("incorrect email or password") || rawMsg.toLowerCase().includes("incorrect email")) {
         friendly = "Sai email hoặc mật khẩu. Vui lòng nhập lại"
+<<<<<<< HEAD
+=======
+      } else if (rawMsg.toLowerCase().includes("incorrect otp") || rawMsg.toLowerCase().includes("otp code has expired") || rawMsg.toLowerCase().includes("otp code")) {
+        friendly = "Mã OTP không đúng hoặc đã hết hạn. Vui lòng thử lại"
+      } else if (rawMsg.toLowerCase().includes("missing information") || rawMsg.toLowerCase().includes("missing info")) {
+        friendly = "Vui lòng điền đầy đủ thông tin"
+      } else if (rawMsg.toLowerCase().includes("user does not exist") || rawMsg.toLowerCase().includes("user not found")) {
+        friendly = "Email không tồn tại trong hệ thống"
+      } else if (rawMsg.toLowerCase().includes("error sending email")) {
+        friendly = "Không thể gửi email. Vui lòng thử lại sau"
+      } else if (rawMsg.toLowerCase().includes("please enter email")) {
+        friendly = "Vui lòng nhập email"
+>>>>>>> c6c20fd1348c222349e24d1a49baedfa050e2421
       }
       
       setError(friendly)
@@ -92,7 +143,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
               ? "Đăng Nhập"
               : mode === "signup"
               ? "Tạo Tài Khoản"
-              : "Quên Mật Khẩu"}
+              : mode === "forgot-password"
+              ? "Quên Mật Khẩu"
+              : "Đặt Lại Mật Khẩu"}
           </h2>
           <button className="close-btn" onClick={onClose}>✕</button>
         </div>
@@ -121,6 +174,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={mode === "reset-password"}
             />
           </div>
 
@@ -137,9 +191,26 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
             </div>
           )}
 
-          {mode !== "forgot-password" && (
+          {mode === "reset-password" && (
             <div className="form-group">
-              <label htmlFor="password">Mật khẩu</label>
+              <label htmlFor="otp">Mã OTP</label>
+              <input
+                id="otp"
+                type="text"
+                placeholder="Nhập mã OTP 6 số"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                required
+                maxLength={6}
+              />
+            </div>
+          )}
+
+          {(mode === "login" || mode === "signup" || mode === "reset-password") && (
+            <div className="form-group">
+              <label htmlFor="password">
+                {mode === "reset-password" ? "Mật khẩu mới" : "Mật khẩu"}
+              </label>
               <input
                 id="password"
                 type="password"
@@ -147,11 +218,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={mode === "reset-password" ? 8 : undefined}
               />
             </div>
           )}
 
-          {mode === "signup" && (
+          {(mode === "signup" || mode === "reset-password") && (
             <div className="form-group">
               <label htmlFor="confirmPassword">Xác nhận mật khẩu</label>
               <input
@@ -161,6 +233,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                minLength={mode === "reset-password" ? 8 : undefined}
               />
             </div>
           )}
@@ -173,7 +246,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
               ? "Đăng Nhập"
               : mode === "signup"
               ? "Đăng Ký"
-              : "Gửi Liên Kết Reset"}
+              : mode === "forgot-password"
+              ? "Gửi Mã OTP"
+              : "Đặt Lại Mật Khẩu"}
           </button>
         </form>
 
@@ -204,6 +279,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
           )}
 
           {mode === "forgot-password" && (
+            <p>
+              <button type="button" className="toggle-mode" onClick={handleBackToLogin}>
+                Quay lại Đăng Nhập
+              </button>
+            </p>
+          )}
+
+          {mode === "reset-password" && (
             <p>
               <button type="button" className="toggle-mode" onClick={handleBackToLogin}>
                 Quay lại Đăng Nhập

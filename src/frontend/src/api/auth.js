@@ -1,4 +1,7 @@
-const API_BASE = '/api/auth';
+import { API_BASE_URL } from '../config/api';
+
+const API_BASE = `${API_BASE_URL}/auth`;
+const USERS_API_BASE = `${API_BASE_URL}/users`;
 
 async function postJson(url, body, accessToken) {
   const res = await fetch(url, {
@@ -12,7 +15,20 @@ async function postJson(url, body, accessToken) {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `Request failed with status ${res.status}`);
+    let errorMessage = `Request failed with status ${res.status}`;
+    
+    // Cố gắng parse JSON error response
+    try {
+      const errorObj = JSON.parse(text);
+      errorMessage = errorObj.error || errorObj.message || errorMessage;
+    } catch (e) {
+      // Nếu không phải JSON, dùng text trực tiếp
+      errorMessage = text || errorMessage;
+    }
+    
+    const error = new Error(errorMessage);
+    error.status = res.status;
+    throw error;
   }
 
   return res.json();
@@ -28,7 +44,7 @@ export async function register({ user_name, email, password }) {
 }
 
 export async function getProfile(accessToken) {
-  const res = await fetch('/api/users/me/', {
+  const res = await fetch(`${USERS_API_BASE}/me/`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -42,6 +58,7 @@ export async function getProfile(accessToken) {
   return res.json();
 }
 
+<<<<<<< HEAD
 // Cập nhật thông tin cá nhân
 export async function updateProfile(accessToken, data) {
   const res = await fetch('/api/users/me/', {
@@ -59,6 +76,14 @@ export async function updateProfile(accessToken, data) {
   }
 
   return res.json();
+=======
+export async function forgotPassword({ email }) {
+  return postJson(`${API_BASE}/forgot-password/`, { email });
+}
+
+export async function resetPassword({ email, otp, new_password }) {
+  return postJson(`${API_BASE}/reset-password/`, { email, otp, new_password });
+>>>>>>> c6c20fd1348c222349e24d1a49baedfa050e2421
 }
 
 

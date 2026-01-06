@@ -1,27 +1,18 @@
 import { useMemo, useState } from "react"
+import { useCart } from "@/contexts/CartContext"
 import "./Payment.css"
 
-const mockOrder = {
-  id: "DH-2025-0001",
-  items: [
-    { name: "Tai nghe không dây", qty: 1, price: 850000 },
-    { name: "Áo thun nam casual", qty: 2, price: 150000 },
-  ],
-  shipping: 30000,
-  customer: {
-    name: "Nguyễn Văn A",
-    phone: "0901234567",
-    address: "123 Lê Lợi, Quận 1, TP.HCM",
-  },
-}
+const SHIPPING_FEE = 30000
 
 const formatCurrency = (v) => v.toLocaleString("vi-VN") + "đ"
 
 export default function Payment() {
+  const { cartItems, getTotalPrice } = useCart()
+
   const [paymentMethod, setPaymentMethod] = useState("cod")
-  const [name, setName] = useState(mockOrder.customer.name)
-  const [phone, setPhone] = useState(mockOrder.customer.phone)
-  const [address, setAddress] = useState(mockOrder.customer.address)
+  const [name, setName] = useState("")
+  const [phone, setPhone] = useState("")
+  const [address, setAddress] = useState("")
   const [cardNumber, setCardNumber] = useState("")
   const [exp, setExp] = useState("")
   const [cvv, setCvv] = useState("")
@@ -29,12 +20,19 @@ export default function Payment() {
   const [status, setStatus] = useState(null) // { type: 'success' | 'error', message: string }
   const [isPaying, setIsPaying] = useState(false)
 
+  const calculateItemPrice = (item) => {
+    const price = item.variant?.price || item.product.base_price
+    const discount = item.product.discount || 0
+    return price * (1 - discount / 100)
+  }
+
   const totals = useMemo(() => {
-    const subtotal = mockOrder.items.reduce((sum, i) => sum + i.price * i.qty, 0)
-    return { subtotal, total: subtotal + mockOrder.shipping }
-  }, [])
+    const subtotal = getTotalPrice()
+    return { subtotal, total: subtotal + SHIPPING_FEE }
+  }, [cartItems, getTotalPrice])
 
   const validate = () => {
+    if (!cartItems || cartItems.length === 0) return "Giỏ hàng đang trống, không thể thanh toán."
     if (!name.trim() || !phone.trim() || !address.trim()) return "Vui lòng điền đủ họ tên, SĐT, địa chỉ."
     if (paymentMethod === "card") {
       if (!cardNumber.trim() || !exp.trim() || !cvv.trim()) return "Vui lòng nhập đủ thông tin thẻ."
@@ -140,17 +138,21 @@ export default function Payment() {
         </div>
 
         <div className="card">
-          <h2>Đơn hàng #{mockOrder.id}</h2>
+          <h2>Đơn hàng của bạn</h2>
           <div className="order-items">
-            {mockOrder.items.map((item, idx) => (
-              <div key={idx} className="order-item">
-                <div>
-                  <div style={{ fontWeight: 700 }}>{item.name}</div>
-                  <div className="info-text">Số lượng: {item.qty}</div>
+            {cartItems && cartItems.length > 0 ? (
+              cartItems.map((item) => (
+                <div key={item.id} className="order-item">
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{item.product.product_name}</div>
+                    <div className="info-text">Số lượng: {item.quantity}</div>
+                  </div>
+                  <div>{formatCurrency(calculateItemPrice(item) * item.quantity)}</div>
                 </div>
-                <div>{formatCurrency(item.price * item.qty)}</div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="info-text">Giỏ hàng của bạn đang trống.</p>
+            )}
           </div>
           <div className="summary-row">
             <span>Tạm tính</span>
@@ -158,7 +160,7 @@ export default function Payment() {
           </div>
           <div className="summary-row">
             <span>Phí vận chuyển</span>
-            <span>{formatCurrency(mockOrder.shipping)}</span>
+            <span>{formatCurrency(SHIPPING_FEE)}</span>
           </div>
           <div className="summary-row total">
             <span>Tổng thanh toán</span>

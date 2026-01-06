@@ -9,11 +9,13 @@
 
 /* ==== CƠ BẢN ==== */
 .navbar {
-  background: rgba(10,10,10,0.9);
+  background: rgba(10,10,10,0.95);
   backdrop-filter: blur(10px);
   color: #fff;
   font-family: 'Rajdhani', sans-serif;
   border-bottom: 1px solid rgba(255,94,0,0.2);
+  position: relative;
+  z-index: 100;
 }
 
 /* ==== THANH TRÊN ==== */
@@ -73,12 +75,26 @@
   gap: 12px;
 }
 
+/* User wrapper với dropdown */
+.navbar-user-wrapper {
+  position: relative;
+  z-index: 9999;
+}
+
 .navbar-user {
   display: flex;
   align-items: center;
   gap: 8px;
   color: #00b2ff;
   font-weight: 700;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.3s;
+}
+
+.navbar-user:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .navbar-avatar {
@@ -99,6 +115,62 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.dropdown-arrow {
+  font-size: 0.6rem;
+  opacity: 0.7;
+  transition: transform 0.3s;
+}
+
+.navbar-user-wrapper:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Dropdown menu */
+.navbar-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 200px;
+  background: #111826;
+  border: 1px solid rgba(255, 94, 0, 0.4);
+  border-radius: 12px;
+  padding: 8px 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  z-index: 9999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.navbar-user-wrapper:hover .navbar-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(5px);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 94, 0, 0.2);
+  color: #ff5e00;
+}
+
+.dropdown-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 /* Logo */
