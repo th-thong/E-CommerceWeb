@@ -16,7 +16,7 @@ const Navbar = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [showSellerModal, setShowSellerModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { getTotalItems } = useCart();
+  const { getTotalItems, clearCart, reloadCartFromStorage } = useCart();
   const [tokens, setTokens] = useState(() => {
     const saved = localStorage.getItem(TOKEN_KEY);
     return saved ? JSON.parse(saved) : null;
@@ -62,9 +62,13 @@ const Navbar = () => {
 
   const handleAuthSuccess = (data) => {
     setTokens(data);
+    // Sau khi đăng nhập, tải lại giỏ hàng của user
+    reloadCartFromStorage();
   };
 
   const handleLogout = () => {
+    // Reset giỏ hàng khi đăng xuất
+    clearCart();
     setTokens(null);
   };
 
@@ -78,9 +82,11 @@ const Navbar = () => {
       return;
     }
 
-    // Kiểm tra quyền seller
+    // Kiểm tra quyền seller (luôn fetch profile mới nhất để tránh cache cũ)
     try {
-      const userProfile = profile || await getProfile(tokens.access);
+      const userProfile = await getProfile(tokens.access);
+      setProfile(userProfile);
+
       if (userProfile.role === "Seller" || userProfile.role === "Admin") {
         // Nếu là seller, navigate đến trang seller
         navigate("/seller");

@@ -10,11 +10,31 @@ export const useCart = () => {
   return context;
 };
 
+const CART_KEY_PREFIX = 'cart_';
+
+const getCurrentUserId = () => {
+  try {
+    const tokensRaw = localStorage.getItem('auth_tokens');
+    if (!tokensRaw) return null;
+    const tokens = JSON.parse(tokensRaw);
+    // Có thể mở rộng: decode JWT để lấy user_id, hiện tạm dùng access token làm key
+    return tokens?.access || null;
+  } catch (error) {
+    console.error('Error reading auth tokens for cart:', error);
+    return null;
+  }
+};
+
+const getStorageKey = () => {
+  const userId = getCurrentUserId();
+  return userId ? `${CART_KEY_PREFIX}${userId}` : 'cart_guest';
+};
+
 export const CartProvider = ({ children }) => {
   // Lấy giỏ hàng từ localStorage khi khởi tạo
   const [cartItems, setCartItems] = useState(() => {
     try {
-      const saved = localStorage.getItem('cart');
+      const saved = localStorage.getItem(getStorageKey());
       return saved ? JSON.parse(saved) : [];
     } catch (error) {
       console.error('Error loading cart:', error);
@@ -25,11 +45,41 @@ export const CartProvider = ({ children }) => {
   // Lưu giỏ hàng vào localStorage mỗi khi thay đổi
   useEffect(() => {
     try {
-      localStorage.setItem('cart', JSON.stringify(cartItems));
+      localStorage.setItem(getStorageKey(), JSON.stringify(cartItems));
     } catch (error) {
       console.error('Error saving cart:', error);
     }
   }, [cartItems]);
+
+  // Theo dõi thay đổi đăng nhập/đăng xuất để reset hoặc nạp lại giỏ hàng
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      if (event.key === 'auth_tokens') {
+        // Khi login/logout ở tab khác, đồng bộ lại giỏ hàng hiện tại
+        try {
+          const saved = localStorage.getItem(getStorageKey());
+          setCartItems(saved ? JSON.parse(saved) : []);
+        } catch (error) {
+          console.error('Error syncing cart after auth change:', error);
+          setCartItems([]);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Hàm explicit để Navbar gọi sau khi login/logout
+  const reloadCartFromStorage = () => {
+    try {
+      const saved = localStorage.getItem(getStorageKey());
+      setCartItems(saved ? JSON.parse(saved) : []);
+    } catch (error) {
+      console.error('Error reloading cart explicitly:', error);
+      setCartItems([]);
+    }
+  };
 
   // Thêm sản phẩm vào giỏ hàng
   const addToCart = (product, variant = null, quantity = 1) => {
@@ -108,6 +158,7 @@ export const CartProvider = ({ children }) => {
     clearCart,
     getTotalPrice,
     getTotalItems,
+    reloadCartFromStorage,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
