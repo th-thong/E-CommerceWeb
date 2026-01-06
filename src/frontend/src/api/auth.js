@@ -58,7 +58,6 @@ export async function getProfile(accessToken) {
   return res.json();
 }
 
-<<<<<<< HEAD
 // Cập nhật thông tin cá nhân
 export async function updateProfile(accessToken, data) {
   const res = await fetch('/api/users/me/', {
@@ -76,14 +75,16 @@ export async function updateProfile(accessToken, data) {
   }
 
   return res.json();
-=======
+}
+
+// Quên mật khẩu - gửi OTP
 export async function forgotPassword({ email }) {
   return postJson(`${API_BASE}/forgot-password/`, { email });
 }
 
+// Đặt lại mật khẩu bằng OTP
 export async function resetPassword({ email, otp, new_password }) {
   return postJson(`${API_BASE}/reset-password/`, { email, otp, new_password });
->>>>>>> c6c20fd1348c222349e24d1a49baedfa050e2421
 }
 
 

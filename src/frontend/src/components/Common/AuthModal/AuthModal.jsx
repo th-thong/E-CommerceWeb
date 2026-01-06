@@ -100,8 +100,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
         friendly = "Tài khoản của bạn đã bị khóa do vi phạm"
       } else if (rawMsg.toLowerCase().includes("incorrect email or password") || rawMsg.toLowerCase().includes("incorrect email")) {
         friendly = "Sai email hoặc mật khẩu. Vui lòng nhập lại"
-<<<<<<< HEAD
-=======
       } else if (rawMsg.toLowerCase().includes("incorrect otp") || rawMsg.toLowerCase().includes("otp code has expired") || rawMsg.toLowerCase().includes("otp code")) {
         friendly = "Mã OTP không đúng hoặc đã hết hạn. Vui lòng thử lại"
       } else if (rawMsg.toLowerCase().includes("missing information") || rawMsg.toLowerCase().includes("missing info")) {
@@ -112,7 +110,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login", onMo
         friendly = "Không thể gửi email. Vui lòng thử lại sau"
       } else if (rawMsg.toLowerCase().includes("please enter email")) {
         friendly = "Vui lòng nhập email"
->>>>>>> c6c20fd1348c222349e24d1a49baedfa050e2421
       }
       
       setError(friendly)

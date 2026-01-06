@@ -1,11 +1,7 @@
 // Admin API endpoints - base path is /shopadmin/ instead of /api/
-<<<<<<< HEAD
-const ADMIN_BASE = '/shopadmin';
-=======
 import { ADMIN_BASE_URL } from '../config/api';
 
 const ADMIN_BASE = ADMIN_BASE_URL;
->>>>>>> c6c20fd1348c222349e24d1a49baedfa050e2421
 
 function buildHeaders(token, extraHeaders = {}) {
   return {
@@ -121,8 +117,3 @@ export async function approveFeedback(feedbackId, token) {
   });
   return handleResponse(res);
 }
-
-<<<<<<< HEAD
-
-=======
->>>>>>> c6c20fd1348c222349e24d1a49baedfa050e2421

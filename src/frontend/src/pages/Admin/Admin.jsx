@@ -3,7 +3,6 @@ import Navbar from "@/components/Layout/Navbar/Navbar"
 import AdminSidebar from "@/components/Layout/AdminSidebar/AdminSidebar"
 import AdminMainContent from "@/components/Admin/AdminMainContent"
 import "@/pages/Seller/Dashboard/Dashboard.css"
-<<<<<<< HEAD
 import "./AdminDashboard.css"
 import { useState, useEffect } from "react"
 import { getProfile } from "@/api/auth"
@@ -15,87 +14,6 @@ const Admin = () => {
   const [loading, setLoading] = useState(true)
   const [hasAccess, setHasAccess] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
-=======
-import { useState, useEffect } from "react"
-import { getProfile } from "@/api/auth"
-import { useNavigate } from "react-router-dom"
-
-const TOKEN_KEY = "auth_tokens"
-
-const Admin = () => {
-  const [activeMenu, setActiveMenu] = useState("users")
-  const [isCheckingPermission, setIsCheckingPermission] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    const checkAdminPermission = async () => {
-      try {
-        setIsCheckingPermission(true)
-        
-        // Kiểm tra token
-        const savedTokens = localStorage.getItem(TOKEN_KEY)
-        if (!savedTokens) {
-          alert("Chỉ có tài khoản admin mới được phép vào kênh này !")
-          navigate("/")
-          return
-        }
-
-        const tokens = JSON.parse(savedTokens)
-        const accessToken = tokens?.access
-
-        if (!accessToken) {
-          alert("Chỉ có tài khoản admin mới được phép vào kênh này !")
-          navigate("/")
-          return
-        }
-
-        // Lấy profile để kiểm tra role
-        const profile = await getProfile(accessToken)
-        
-        // Kiểm tra xem user có phải admin không
-        if (profile.role !== "Admin") {
-          alert("Chỉ có tài khoản admin mới được phép vào kênh này !")
-          navigate("/")
-          return
-        }
-
-        // Nếu là admin, cho phép truy cập
-        setIsAdmin(true)
-        setIsCheckingPermission(false)
-      } catch (error) {
-        console.error("Failed to check admin permission:", error)
-        alert("Chỉ có tài khoản admin mới được phép vào kênh này !")
-        navigate("/")
-      }
-    }
-
-    checkAdminPermission()
-  }, [navigate])
-
-  if (isCheckingPermission) {
-    return (
-      <div className="container">
-        <BackgroundAnimation />
-        <Navbar />
-        <div style={{ 
-          display: "flex", 
-          justifyContent: "center", 
-          alignItems: "center", 
-          minHeight: "60vh",
-          color: "#fff",
-          fontSize: "18px"
-        }}>
-          Đang kiểm tra quyền truy cập...
-        </div>
-      </div>
-    )
-  }
-
-  if (!isAdmin) {
-    return null
-  }
->>>>>>> c6c20fd1348c222349e24d1a49baedfa050e2421
 
   const getToken = () => {
     const saved = localStorage.getItem("auth_tokens")
@@ -122,8 +40,10 @@ const Admin = () => {
 
       try {
         const profile = await getProfile(token)
-        // Kiểm tra nếu user là admin (role === "admin" hoặc is_staff === true)
-        if (profile.role === "admin" || profile.is_staff === true) {
+        const role = (profile.role || profile.Role || "").toString().toLowerCase()
+
+        // Cho phép nếu role là admin (viết hoa/thường) hoặc is_staff = true
+        if (role === "admin" || profile.is_staff === true) {
           setHasAccess(true)
           setLoading(false)
         } else {
