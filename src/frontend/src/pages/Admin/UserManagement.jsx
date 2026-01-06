@@ -11,6 +11,7 @@ const AdminUserManagement = () => {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState("all") // "all" hoặc "pending"
   const [actionLoading, setActionLoading] = useState(null) // userId đang xử lý
+  const [detailUser, setDetailUser] = useState(null) // Thông tin người bán chờ duyệt
 
   const getToken = () => {
     const saved = localStorage.getItem("auth_tokens")
@@ -94,7 +95,8 @@ const AdminUserManagement = () => {
     setActionLoading(userId)
     try {
       const token = getToken()
-      await updateUser(userId, { role: "seller", status: "active" }, token)
+      // Backend require đúng tên group (Django Group name) -> "Seller"
+      await updateUser(userId, { role: "Seller", status: "active" }, token)
       alert("Đã phê duyệt thành công!")
       fetchUsers()
     } catch (err) {
@@ -229,6 +231,17 @@ const AdminUserManagement = () => {
                         <span style={{ color: "#aaa" }}>Đang xử lý...</span>
                       ) : (
                         <>
+                          {/* Nút xem chi tiết (dành cho pending sellers) */}
+                          {activeTab === "pending" && (
+                            <button
+                              className="edit-btn"
+                              onClick={() => setDetailUser(user)}
+                              style={{ marginRight: 8 }}
+                            >
+                              Xem chi tiết
+                            </button>
+                          )}
+
                           {/* Nút phê duyệt (chỉ hiện cho pending users) */}
                           {activeTab === "pending" && user.status === "pending" && (
                             <button
@@ -274,6 +287,63 @@ const AdminUserManagement = () => {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Modal xem chi tiết người bán */}
+      {detailUser && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+          onClick={() => setDetailUser(null)}
+        >
+          <div
+            style={{
+              background: "#111827",
+              color: "#e5e7eb",
+              padding: 24,
+              borderRadius: 12,
+              width: "480px",
+              maxWidth: "90%",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+              <h3 style={{ margin: 0 }}>Thông tin người bán</h3>
+              <button
+                className="reject-btn"
+                onClick={() => setDetailUser(null)}
+                style={{ backgroundColor: "#374151" }}
+              >
+                Đóng
+              </button>
+            </div>
+
+            <div style={{ display: "grid", gap: 8 }}>
+              <div><strong>ID:</strong> {detailUser.user_id}</div>
+              <div><strong>Tên người dùng:</strong> {detailUser.user_name || detailUser.username || "—"}</div>
+              <div><strong>Email:</strong> {detailUser.email || "—"}</div>
+              <div>
+                <strong>Số điện thoại:</strong>{" "}
+                {detailUser.shop_phone_number || detailUser.phone || detailUser.phone_number || "—"}
+              </div>
+              <div><strong>Vai trò yêu cầu:</strong> {getRoleLabel(detailUser.role)}</div>
+              <div><strong>Trạng thái:</strong> {getStatusLabel(detailUser.status)}</div>
+
+              {/* Thông tin cửa hàng (nếu backend cung cấp) */}
+              <div><strong>Tên cửa hàng:</strong> {detailUser.shop_name || detailUser.store_name || detailUser.seller_name || "—"}</div>
+              <div><strong>Mô tả cửa hàng:</strong> {detailUser.shop_description || detailUser.store_description || "—"}</div>
+              <div><strong>Địa chỉ cửa hàng:</strong> {detailUser.shop_address || detailUser.address || "—"}</div>
+            </div>
+          </div>
         </div>
       )}
     </div>
