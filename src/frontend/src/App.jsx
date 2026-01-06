@@ -4,6 +4,8 @@ import SellerDashboard from "./pages/Seller/Dashboard/Dashboard"
 import Payment from "./pages/Public/Payment/Payment"
 import Admin from "./pages/Admin/Admin"
 import ProductPage from "./components/ProductDetail/ProductPage"
+import Account from "./pages/User/Account"
+import Orders from "./pages/User/Orders"
 import { CartProvider } from "./contexts/CartContext"
 
 const App = () => {
@@ -16,6 +18,8 @@ const App = () => {
           <Route path="/admin" element={<Admin />} />
           <Route path="/seller" element={<SellerDashboard />} />
           <Route path="/checkout" element={<Payment />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/orders" element={<Orders />} />
         </Routes>
       </CartProvider>
     </BrowserRouter>

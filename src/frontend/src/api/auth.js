@@ -42,6 +42,25 @@ export async function getProfile(accessToken) {
   return res.json();
 }
 
+// Cập nhật thông tin cá nhân
+export async function updateProfile(accessToken, data) {
+  const res = await fetch('/api/users/me/', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Failed to update profile (${res.status})`);
+  }
+
+  return res.json();
+}
+
 
 
 

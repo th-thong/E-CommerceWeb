@@ -1,5 +1,5 @@
 import "./Navbar.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AuthModal from "@/components/Common/AuthModal/AuthModal";
 import { getProfile } from "@/api/auth";
@@ -9,6 +9,8 @@ import { useCart } from "@/contexts/CartContext";
 const TOKEN_KEY = "auth_tokens";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [cartOpen, setCartOpen] = useState(false);
@@ -19,6 +21,17 @@ const Navbar = () => {
   });
   const [profile, setProfile] = useState(null);
   const [profileError, setProfileError] = useState(null);
+
+  // Kiểm tra query param để mở modal đăng nhập
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("login") === "true" && !tokens) {
+      setAuthMode("login");
+      setAuthOpen(true);
+      // Xóa query param khỏi URL
+      navigate("/", { replace: true });
+    }
+  }, [location.search, tokens, navigate]);
 
   useEffect(() => {
     if (tokens) {
@@ -50,6 +63,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     setTokens(null);
+    navigate("/");
   };
 
   return (
@@ -91,13 +105,27 @@ const Navbar = () => {
           <div className="navbar-right">
             {tokens ? (
               <>
-                <div className="navbar-user">
-                  <div className="navbar-avatar">
-                    {/* chữ cái đầu làm avatar tạm */}
-                    {(profile?.user_name?.[0] || profile?.email?.[0] || "U").toUpperCase()}
+                <div className="navbar-user-wrapper">
+                  <div className="navbar-user">
+                    <div className="navbar-avatar">
+                      {(profile?.user_name?.[0] || profile?.email?.[0] || "U").toUpperCase()}
+                    </div>
+                    <div className="navbar-username">
+                      {profile?.user_name || profile?.email || "Đã đăng nhập"}
+                    </div>
+                    <span className="dropdown-arrow">▼</span>
                   </div>
-                  <div className="navbar-username">
-                    {profile?.user_name || profile?.email || "Đã đăng nhập"}
+                  
+                  {/* Dropdown menu */}
+                  <div className="navbar-dropdown">
+                    <Link to="/account" className="dropdown-item">
+                      <span className="dropdown-icon">👤</span>
+                      Tài khoản của tôi
+                    </Link>
+                    <Link to="/orders" className="dropdown-item">
+                      <span className="dropdown-icon">📦</span>
+                      Đơn mua
+                    </Link>
                   </div>
                 </div>
                 <button className="btn" onClick={handleLogout}>
