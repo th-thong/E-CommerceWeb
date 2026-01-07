@@ -43,19 +43,63 @@ export async function register({ user_name, email, password, phone_number }) {
   return postJson(`${API_BASE}/register/`, { user_name, email, password, phone_number });
 }
 
+// Dùng refresh token để xin access token mới
+export async function refreshToken(refresh) {
+  return postJson(`${API_BASE}/refresh/`, { refresh });
+}
+
 export async function getProfile(accessToken) {
-  const res = await fetch(`${USERS_API_BASE}/me/`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const fetchProfile = async (token) => {
+    const res = await fetch(`${USERS_API_BASE}/me/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Failed to fetch profile (${res.status})`);
+    if (!res.ok) {
+      const text = await res.text();
+      const error = new Error(text || `Failed to fetch profile (${res.status})`);
+      error.status = res.status;
+      throw error;
+    }
+
+    return res.json();
+  };
+
+  try {
+    // Thử gọi với access token hiện tại
+    return await fetchProfile(accessToken);
+  } catch (err) {
+    // Nếu không phải lỗi hết hạn (401) thì ném ra luôn
+    if (err.status !== 401) {
+      throw err;
+    }
+
+    // Thử dùng refresh token trong localStorage để xin access token mới
+    try {
+      const saved = localStorage.getItem('auth_tokens');
+      if (!saved) {
+        throw err;
+      }
+      const tokens = JSON.parse(saved);
+      if (!tokens?.refresh) {
+        throw err;
+      }
+
+      // Gọi API refresh
+      const newTokens = await refreshToken(tokens.refresh);
+      const updatedTokens = { ...tokens, ...newTokens };
+
+      // Lưu lại vào localStorage để các nơi khác dùng
+      localStorage.setItem('auth_tokens', JSON.stringify(updatedTokens));
+
+      // Gọi lại profile với access token mới
+      return await fetchProfile(updatedTokens.access);
+    } catch (refreshError) {
+      // Nếu refresh cũng lỗi thì coi như hết phiên đăng nhập
+      throw err;
+    }
   }
-
-  return res.json();
 }
 
 // Cập nhật thông tin cá nhân

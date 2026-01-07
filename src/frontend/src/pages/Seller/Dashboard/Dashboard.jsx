@@ -56,29 +56,39 @@ const SellerDashboard = () => {
       try {
         const data = await fetchMyShopOrders(accessToken)
 
-        // API trả về danh sách ShopOrderDetail, map sang cấu trúc dùng cho UI
+        // API trả về danh sách ShopOrderDetail (dữ liệu thật từ backend)
         const mappedOrders = (data || []).map((item, index) => {
-          const priceNumber = Number.parseFloat(item.price) || 0
+          // Map trạng thái từ backend sang nhãn tiếng Việt dùng trong UI
+          const backendStatus = (item.order_status || "").toLowerCase()
+          // pending -> Đang chờ, confirmed -> Đang giao, shipped -> Đã giao
+          let displayStatus = "Đang chờ"
+          if (backendStatus === "confirmed") displayStatus = "Đang giao"
+          else if (backendStatus === "shipped") displayStatus = "Đã giao"
+
           const quantityNumber = item.quantity ?? 0
-          const lineTotal = priceNumber * quantityNumber
+          const priceNumber = Number.parseFloat(item.price) || 0
+          const subtotalNumber =
+            item.subtotal !== undefined && item.subtotal !== null
+              ? Number.parseFloat(item.subtotal)
+              : priceNumber * quantityNumber
 
           return {
             id: index + 1,
-            orderCode: `DH-${item.order}`,
-            customerName: `Khách hàng #${item.order}`,
-            phone: "",
-            address: "",
-            status: "Chờ",
-            createdAt: "",
+            orderCode: `DH-${item.order_id ?? item.order ?? ""}`,
+            customerName: item.customer_name || item.customer_email || "Khách hàng",
+            phone: "", // Chưa có field phone trong serializer
+            address: "", // Chưa có field address trong serializer
+            status: displayStatus,
+            createdAt: item.created_at || "",
             items: [
               {
                 id: item.product,
-                name: `Sản phẩm #${item.product}`,
+                name: item.product_name || `Sản phẩm #${item.product}`,
                 quantity: quantityNumber,
                 price: priceNumber,
               },
             ],
-            total: lineTotal,
+            total: subtotalNumber,
           }
         })
 

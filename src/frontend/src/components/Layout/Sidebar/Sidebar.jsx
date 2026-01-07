@@ -19,13 +19,9 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
       title: "Quản Lý Đơn Hàng",
       items: [
         { label: "Đơn hàng đang chờ", id: "orders-pending" },
-        { label: "Đơn hàng đang chuẩn bị", id: "orders-preparing" },
-        { label: "Đơn hàng đang giao", id: "orders-shipping" },
+        { label: "Đơn hàng đang giao", id: "orders-preparing" },
+        { label: "Đơn hàng đã giao", id: "orders-shipping" },
       ],
-    },
-    {
-      title: "Quản Lý Sản Phẩm",
-      items: ["Tất cả sản phẩm", "Thêm sản phẩm", "Chỉnh sửa sản phẩm", "Sản phẩm chờ duyệt"],
     },
     {
       title: "Chăm sóc khách hàng",
@@ -65,16 +61,21 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
           <div key={idx} className="menu-section">
             <h3 className="menu-title">{category.title}</h3>
             <ul className="menu-list">
-              {category.items.map((item) => (
-                <li key={item.id}>
-                  <button
-                    className={`menu-item submenu-item ${activeMenu === item.id ? "active" : ""}`}
-                    onClick={() => setActiveMenu(item.id)}
-                  >
-                    <span className="menu-label">{item.label}</span>
-                  </button>
-                </li>
-              ))}
+              {category.items.map((item, index) => {
+                // Hỗ trợ cả dạng object có id/label và string đơn giản
+                const id = typeof item === "string" ? `${category.title}-${index}` : item.id
+                const label = typeof item === "string" ? item : item.label
+                return (
+                  <li key={id}>
+                    <button
+                      className={`menu-item submenu-item ${activeMenu === id ? "active" : ""}`}
+                      onClick={() => setActiveMenu(id)}
+                    >
+                      <span className="menu-label">{label}</span>
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         ))}

@@ -1,44 +1,35 @@
 import { useState, useEffect } from "react"
-import { fetchShopStatistics } from "@/api/orders"
 import "./section.css"
 
-const TOKEN_KEY = "auth_tokens"
-
-const AnalyticsSection = () => {
+const AnalyticsSection = ({ orders = [] }) => {
   const [stats, setStats] = useState({
     total_orders: 0,
     total_revenue: 0,
     period: '30 ngày qua'
   })
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
   useEffect(() => {
-    const loadStatistics = async () => {
-      try {
-        setLoading(true)
-        const savedTokens = localStorage.getItem(TOKEN_KEY)
-        const tokens = savedTokens ? JSON.parse(savedTokens) : null
-        const accessToken = tokens?.access || null
-        
-        if (!accessToken) {
-          setError("Vui lòng đăng nhập để xem thống kê")
-          return
-        }
+    // Tính toán thống kê từ danh sách đơn hàng đã được load ở Dashboard
+    try {
+      setLoading(true)
+      const deliveredOrders = orders.filter((order) => order.status === "Đã giao")
+      // Số đơn hàng và doanh thu đều chỉ tính từ đơn đã giao
+      const totalOrders = deliveredOrders.length
+      const totalRevenue = deliveredOrders.reduce((sum, order) => {
+        const value = Number.parseFloat(order.total) || 0
+        return sum + value
+      }, 0)
 
-        const data = await fetchShopStatistics(accessToken)
-        setStats(data)
-        setError(null)
-      } catch (err) {
-        console.error("Error loading statistics:", err)
-        setError(err.message || "Không thể tải thống kê")
-      } finally {
-        setLoading(false)
-      }
+      setStats({
+        total_orders: totalOrders,
+        total_revenue: totalRevenue,
+        period: "30 ngày qua",
+      })
+    } finally {
+      setLoading(false)
     }
-
-    loadStatistics()
-  }, [])
+  }, [orders])
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -66,13 +57,7 @@ const AnalyticsSection = () => {
         <h2>Thống kê bán hàng</h2>
         <span className="time-info">Cập nhật: {stats.period}</span>
       </div>
-      
-      {error && (
-        <div style={{ padding: '20px', color: '#ff5e00', textAlign: 'center' }}>
-          ⚠️ {error}
-        </div>
-      )}
-      
+
       <div className="stats-grid">
         {displayStats.map((stat, idx) => (
           <div key={idx} className="stat-card">

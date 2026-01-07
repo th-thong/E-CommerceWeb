@@ -6,7 +6,7 @@ const OrderManagement = ({ filterStatus, orders = [], setOrders }) => {
 
   const handleAcceptOrder = (orderId) => {
     setOrders(
-      orders.map((order) => (order.id === orderId ? { ...order, status: "Đang chuẩn bị" } : order)),
+      orders.map((order) => (order.id === orderId ? { ...order, status: "Đang giao" } : order)),
     )
   }
 
@@ -18,18 +18,18 @@ const OrderManagement = ({ filterStatus, orders = [], setOrders }) => {
 
   const handleCompletePreparation = (orderId) => {
     setOrders(
-      orders.map((order) => (order.id === orderId ? { ...order, status: "Đang giao hàng" } : order)),
+      orders.map((order) => (order.id === orderId ? { ...order, status: "Đã giao" } : order)),
     )
   }
 
   // Lọc đơn hàng theo filterStatus
   const getFilteredOrders = () => {
     if (filterStatus === "orders-pending" || filterStatus === "orders") {
-      return orders.filter((order) => order.status === "Chờ")
+      return orders.filter((order) => order.status === "Đang chờ")
     } else if (filterStatus === "orders-preparing") {
-      return orders.filter((order) => order.status === "Đang chuẩn bị")
+      return orders.filter((order) => order.status === "Đang giao")
     } else if (filterStatus === "orders-shipping") {
-      return orders.filter((order) => order.status === "Đang giao hàng")
+      return orders.filter((order) => order.status === "Đã giao")
     }
     return []
   }
@@ -37,9 +37,9 @@ const OrderManagement = ({ filterStatus, orders = [], setOrders }) => {
   const filteredOrders = getFilteredOrders()
 
   const getSectionTitle = () => {
-    if (filterStatus === "orders-pending" || filterStatus === "orders") return "Đơn Hàng Đang Chờ"
-    if (filterStatus === "orders-preparing") return "Đơn Hàng Đang Chuẩn Bị"
-    if (filterStatus === "orders-shipping") return "Đơn Hàng Đang Giao"
+    if (filterStatus === "orders-pending" || filterStatus === "orders") return "Đơn hàng đang chờ"
+    if (filterStatus === "orders-preparing") return "Đơn hàng đang giao"
+    if (filterStatus === "orders-shipping") return "Đơn hàng đã giao"
     return "Quản Lý Đơn Hàng"
   }
 
@@ -96,7 +96,7 @@ const OrderManagement = ({ filterStatus, orders = [], setOrders }) => {
                     <div className="order-total">
                       <strong>Tổng tiền: {order.total.toLocaleString()}₫</strong>
                     </div>
-                    {order.status === "Chờ" && (
+                    {order.status === "Đang chờ" && (
                       <div className="order-actions">
                         <button className="accept-btn" onClick={() => handleAcceptOrder(order.id)}>
                           Nhận đơn
@@ -106,7 +106,7 @@ const OrderManagement = ({ filterStatus, orders = [], setOrders }) => {
                         </button>
                       </div>
                     )}
-                    {order.status === "Đang chuẩn bị" && (
+                    {order.status === "Đang giao" && (
                       <button
                         className="complete-prepare-btn"
                         onClick={() => handleCompletePreparation(order.id)}
@@ -114,8 +114,8 @@ const OrderManagement = ({ filterStatus, orders = [], setOrders }) => {
                         Hoàn tất chuẩn bị
                       </button>
                     )}
-                    {order.status === "Đang giao hàng" && (
-                      <span className="shipping-status">Đang được giao hàng</span>
+                    {order.status === "Đã giao" && (
+                      <span className="shipping-status">Đã giao hàng thành công</span>
                     )}
                   </div>
                 </div>

@@ -8,7 +8,7 @@ const MainContent = ({ activeMenu, orders, setOrders, products, setProducts }) =
   return (
     <main className="main-content">
       {activeMenu === "todo" && <TodoSection orders={orders} products={products} />}
-      {activeMenu === "analytics" && <AnalyticsSection />}
+      {activeMenu === "analytics" && <AnalyticsSection orders={orders} />}
       {activeMenu === "services" && <ServicesSection />}
       {activeMenu === "kol" && <KOLSection />}
       {activeMenu === "livestream" && <LivestreamSection />}
