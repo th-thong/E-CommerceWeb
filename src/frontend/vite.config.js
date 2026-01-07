@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       },
       // Forward admin API calls
       '/shopadmin': {
-        target: 'http://127.0.0.1:8000',
+        target: backendUrl,
         changeOrigin: true,
       },
     },
