@@ -40,7 +40,7 @@ def get_list_of_public_product(request):
         'variants', 'images', 'category', 'shop'
     ).order_by('-created_at')
     
-    serializer = ProductSerializer(product_list, many=True)
+    serializer = ProductSerializer(product_list, many=True, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -73,7 +73,7 @@ def get_public_product_detail(request, product_id):
         product = Product.objects.prefetch_related('variants', 'images', 'shop', 'category').get(
             id=product_id
         )
-        serializer = ProductSerializer(product)
+        serializer = ProductSerializer(product, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Product.DoesNotExist:
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -103,7 +103,7 @@ def get_trendy_product(request):
     # 3. Prefetch để lấy ảnh và variant
     trendy_products = trendy_products.prefetch_related('images', 'variants', 'shop', 'category')
 
-    serializer = ProductSerializer(trendy_products, many=True)
+    serializer = ProductSerializer(trendy_products, many=True, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -124,7 +124,7 @@ def get_flashsale_product(request):
         'variants', 'images', 'category', 'shop'
     ).order_by('-discount')
     
-    serializer = ProductSerializer(flashsale_product, many=True)
+    serializer = ProductSerializer(flashsale_product, many=True, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK) 
 
 
@@ -168,7 +168,7 @@ def get_recommend_product(request):
         # Logic cho khách vãng lai
         product_list = base_query.order_by('-created_at')
     
-    serializer = ProductSerializer(product_list, many=True)
+    serializer = ProductSerializer(product_list, many=True, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -205,7 +205,7 @@ class SellerProductListCreateView(APIView):
              return Response({"error": "You do not have a shop yet."}, status=status.HTTP_400_BAD_REQUEST)
 
         products = Product.objects.filter(shop=shop).prefetch_related('variants', 'images', 'category')
-        serializer = ProductSerializer(products, many=True)
+        serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     @extend_schema(
@@ -224,7 +224,7 @@ class SellerProductListCreateView(APIView):
         if not shop:
              return Response({"error": "Please register a shop first."}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = ProductSerializer(data=request.data)
+        serializer = ProductSerializer(data=request.data, context={'request': request})
         
         if serializer.is_valid():
             try:
@@ -274,7 +274,7 @@ class SellerProductDetailView(APIView):
         if not product:
             return Response(PRODUCT_NOT_FOUND_MSG, status=status.HTTP_404_NOT_FOUND)
             
-        serializer = ProductSerializer(product)
+        serializer = ProductSerializer(product, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -292,7 +292,7 @@ class SellerProductDetailView(APIView):
         if not product:
             return Response(PRODUCT_NOT_FOUND_MSG, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ProductSerializer(product, data=request.data, partial=True)
+        serializer = ProductSerializer(product, data=request.data, partial=True, context={'request': request})
         
         if serializer.is_valid():
             try:

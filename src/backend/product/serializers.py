@@ -3,6 +3,7 @@ from django.db import transaction
 from .models import Product, ProductImage, ProductVariant
 from .utils import upload_image, rename_product_image
 import json
+from django.conf import settings
 
 # 1. Serializer cho Variant (Chỉ để hiển thị và validate data con)
 class ProductVariantSerializer(serializers.ModelSerializer):
@@ -12,9 +13,26 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
 # 2. Serializer cho Image (Hiển thị)
 class ProductImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductImage
         fields = ['id', 'image_url', 'file_id', 'order']
+
+    def get_image_url(self, obj):
+            if not obj.image_url:
+                return None
+            
+            if obj.image_url.startswith('http'):
+                return obj.image_url
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.image_url)
+            
+            base = getattr(settings, 'LOCAL_URL', 'http://localhost:10000').rstrip('/')
+            path = obj.image_url if obj.image_url.startswith('/') else f"/{obj.image_url}"
+            return f"{base}{path}"
+
 
 # 3. Serializer CHÍNH 
 class ProductSerializer(serializers.ModelSerializer):
