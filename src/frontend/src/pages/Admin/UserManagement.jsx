@@ -106,6 +106,23 @@ const AdminUserManagement = () => {
     }
   }
 
+  // Xử lý từ chối đăng ký người bán
+  const handleReject = async (userId) => {
+    if (!window.confirm("Bạn có chắc muốn từ chối yêu cầu đăng ký người bán này?")) return
+    setActionLoading(userId)
+    try {
+      const token = getToken()
+      // Từ chối: set status về "active" (không phải seller), không thêm vào group Seller
+      await updateUser(userId, { status: "active" }, token)
+      alert("Đã từ chối yêu cầu đăng ký người bán!")
+      fetchUsers()
+    } catch (err) {
+      alert("Lỗi: " + (err.message || "Không thể từ chối"))
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   // Xử lý khóa tài khoản
   const handleBan = async (userId) => {
     if (!window.confirm("Bạn có chắc muốn khóa tài khoản này?")) return
@@ -231,54 +248,67 @@ const AdminUserManagement = () => {
                         <span style={{ color: "#aaa" }}>Đang xử lý...</span>
                       ) : (
                         <>
-                          {/* Nút xem chi tiết (dành cho pending sellers) */}
-                          {activeTab === "pending" && (
-                            <button
-                              className="edit-btn"
-                              onClick={() => setDetailUser(user)}
-                              style={{ marginRight: 8 }}
-                            >
-                              Xem chi tiết
-                            </button>
-                          )}
+                          {/* Tab "Chờ duyệt người bán": chỉ hiển thị 3 nút */}
+                          {activeTab === "pending" && user.status === "pending" ? (
+                            <>
+                              {/* Nút xem chi tiết */}
+                              <button
+                                className="edit-btn"
+                                onClick={() => setDetailUser(user)}
+                                style={{ marginRight: 8 }}
+                              >
+                                Xem chi tiết
+                              </button>
 
-                          {/* Nút phê duyệt (chỉ hiện cho pending users) */}
-                          {activeTab === "pending" && user.status === "pending" && (
-                            <button
-                              className="accept-btn"
-                              onClick={() => handleApprove(user.user_id)}
-                            >
-                              Phê duyệt
-                            </button>
-                          )}
+                              {/* Nút phê duyệt */}
+                              <button
+                                className="accept-btn"
+                                onClick={() => handleApprove(user.user_id)}
+                                style={{ marginRight: 8 }}
+                              >
+                                Phê duyệt
+                              </button>
 
-                          {/* Nút khóa/mở khóa */}
-                          {user.status === "banned" ? (
-                            <button
-                              className="edit-btn"
-                              onClick={() => handleUnban(user.user_id)}
-                              style={{ marginLeft: 8 }}
-                            >
-                              Mở khóa
-                            </button>
+                              {/* Nút từ chối */}
+                              <button
+                                className="reject-btn"
+                                onClick={() => handleReject(user.user_id)}
+                              >
+                                Từ chối
+                              </button>
+                            </>
                           ) : (
-                            <button
-                              className="reject-btn"
-                              onClick={() => handleBan(user.user_id)}
-                              style={{ marginLeft: 8 }}
-                            >
-                              Khóa
-                            </button>
-                          )}
+                            <>
+                              {/* Tab "Tất cả người dùng": hiển thị đầy đủ các nút */}
+                              {/* Nút khóa/mở khóa */}
+                              {user.status === "banned" ? (
+                                <button
+                                  className="edit-btn"
+                                  onClick={() => handleUnban(user.user_id)}
+                                  style={{ marginRight: 8 }}
+                                >
+                                  Mở khóa
+                                </button>
+                              ) : (
+                                <button
+                                  className="reject-btn"
+                                  onClick={() => handleBan(user.user_id)}
+                                  style={{ marginRight: 8 }}
+                                >
+                                  Khóa
+                                </button>
+                              )}
 
-                          {/* Nút xóa */}
-                          <button
-                            className="reject-btn"
-                            onClick={() => handleDelete(user.user_id)}
-                            style={{ marginLeft: 8, backgroundColor: "#8b0000" }}
-                          >
-                            Xóa
-                          </button>
+                              {/* Nút xóa */}
+                              <button
+                                className="reject-btn"
+                                onClick={() => handleDelete(user.user_id)}
+                                style={{ backgroundColor: "#8b0000" }}
+                              >
+                                Xóa
+                              </button>
+                            </>
+                          )}
                         </>
                       )}
                     </td>
