@@ -42,7 +42,7 @@ class ProductVariant(models.Model):
     
     quantity = models.IntegerField(default=0)
     
-    attributes = models.JSONField(default=dict) 
+    attributes = models.JSONField(default=dict, null=False) 
     
     is_active = models.BooleanField(default=True)
 
