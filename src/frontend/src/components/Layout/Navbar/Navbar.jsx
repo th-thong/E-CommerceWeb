@@ -16,6 +16,7 @@ const Navbar = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [showSellerModal, setShowSellerModal] = useState(false);
   const [isAlreadySeller, setIsAlreadySeller] = useState(false);
+  const [isPendingSeller, setIsPendingSeller] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { getTotalItems, clearCart, reloadCartFromStorage } = useCart();
   const [tokens, setTokens] = useState(() => {
@@ -103,15 +104,22 @@ const Navbar = () => {
       if (userProfile.role === "Seller" || userProfile.role === "Admin") {
         // Nếu là seller, navigate đến trang seller
         navigate("/seller");
-      } else {
-        // Nếu không phải seller, hiển thị popup
+      } else if (userProfile.status === "pending" && (userProfile.shop_name || userProfile.shop_address || userProfile.shop_phone_number)) {
+        // Đã gửi form đăng ký, đang chờ duyệt
         setIsAlreadySeller(false);
+        setIsPendingSeller(true);
+        setShowSellerModal(true);
+      } else {
+        // Nếu không phải seller và chưa gửi form, hiển thị popup hỏi đăng ký
+        setIsAlreadySeller(false);
+        setIsPendingSeller(false);
         setShowSellerModal(true);
       }
     } catch (err) {
       console.error("Error checking seller permission:", err);
       // Nếu có lỗi, vẫn hiển thị popup
       setIsAlreadySeller(false);
+      setIsPendingSeller(false);
       setShowSellerModal(true);
     }
   };
@@ -119,17 +127,20 @@ const Navbar = () => {
   const handleSellerModalYes = () => {
     setShowSellerModal(false);
     setIsAlreadySeller(false);
+    setIsPendingSeller(false);
     navigate("/seller-registration");
   };
 
   const handleSellerModalNo = () => {
     setShowSellerModal(false);
     setIsAlreadySeller(false);
+    setIsPendingSeller(false);
   };
 
   const handleCloseSellerModal = () => {
     setShowSellerModal(false);
     setIsAlreadySeller(false);
+    setIsPendingSeller(false);
   };
 
   const handleBecomeSellerClick = async (e) => {
@@ -149,9 +160,15 @@ const Navbar = () => {
       if (userProfile.role === "Seller") {
         // Nếu đã là seller, hiển thị thông báo
         setIsAlreadySeller(true);
+        setIsPendingSeller(false);
+        setShowSellerModal(true);
+      } else if (userProfile.status === "pending" && (userProfile.shop_name || userProfile.shop_address || userProfile.shop_phone_number)) {
+        // Đã gửi form đăng ký, đang chờ duyệt
+        setIsAlreadySeller(false);
+        setIsPendingSeller(true);
         setShowSellerModal(true);
       } else {
-        // Nếu chưa là seller, chuyển đến trang đăng ký
+        // Nếu chưa là seller và chưa gửi form, chuyển đến trang đăng ký
         navigate("/seller-registration");
       }
     } catch (err) {
@@ -329,9 +346,11 @@ const Navbar = () => {
               marginBottom: '30px',
               lineHeight: '1.6'
             }}>
-              {isAlreadySeller 
-                ? 'Bạn đã là người bán rồi! Bạn có thể truy cập kênh người bán để quản lý shop của mình.'
-                : 'Tài khoản chưa được cấp quyền người bán, bạn có muốn đăng kí trở thành người bán không?'
+              {isPendingSeller
+                ? 'Bạn đã gửi yêu cầu đăng ký trở thành người bán, vui lòng đợi admin duyệt.'
+                : isAlreadySeller 
+                  ? 'Bạn đã là người bán rồi! Bạn có thể truy cập kênh người bán để quản lý shop của mình.'
+                  : 'Tài khoản chưa được cấp quyền người bán, bạn có muốn đăng kí trở thành người bán không?'
               }
             </p>
             <div style={{
@@ -339,7 +358,33 @@ const Navbar = () => {
               gap: '12px',
               justifyContent: 'center'
             }}>
-              {isAlreadySeller ? (
+              {isPendingSeller ? (
+                <button
+                  onClick={handleCloseSellerModal}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    background: 'linear-gradient(45deg, #ff5e00, #ff8c42)',
+                    border: 'none',
+                    color: '#0a0a0a',
+                    fontFamily: 'Rajdhani, sans-serif',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.transform = 'translateY(-2px)'
+                    e.target.style.boxShadow = '0 8px 20px rgba(255, 94, 0, 0.35)'
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.transform = 'translateY(0)'
+                    e.target.style.boxShadow = 'none'
+                  }}
+                >
+                  Đóng
+                </button>
+              ) : isAlreadySeller ? (
                 <>
                   <button
                     onClick={handleCloseSellerModal}
