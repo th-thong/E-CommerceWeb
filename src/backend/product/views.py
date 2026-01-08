@@ -35,8 +35,11 @@ PRODUCT_NOT_FOUND_MSG = {"error": "Product not found or you do not have permissi
 def get_list_of_public_product(request):
     """
     Lấy danh sách tất cả sản phẩm đang hoạt động (Mới nhất lên đầu).
+    Chỉ trả về sản phẩm đã được admin duyệt (is_active=True).
     """
-    product_list = Product.objects.prefetch_related(
+    product_list = Product.objects.filter(
+        is_active=True
+    ).prefetch_related(
         'variants', 'images', 'category', 'shop'
     ).order_by('-created_at')
     
@@ -68,11 +71,13 @@ def get_list_of_public_product(request):
 def get_public_product_detail(request, product_id):
     """
     Xem chi tiết một sản phẩm cụ thể.
+    Chỉ cho phép xem sản phẩm đã được admin duyệt (is_active=True).
     """
     try:
-        product = Product.objects.prefetch_related('variants', 'images', 'shop', 'category').get(
-            id=product_id
-        )
+        product = Product.objects.filter(
+            id=product_id,
+            is_active=True
+        ).prefetch_related('variants', 'images', 'shop', 'category').get()
         serializer = ProductSerializer(product, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Product.DoesNotExist:
@@ -89,12 +94,14 @@ def get_public_product_detail(request, product_id):
 def get_trendy_product(request):
     """
     Top 10 sản phẩm bán chạy nhất trong 7 ngày qua.
+    Chỉ trả về sản phẩm đã được admin duyệt (is_active=True).
     """
     # 1. Xác định mốc thời gian (7 ngày trước)
     last_week = timezone.now() - timedelta(days=7)
 
-    # 2. Truy vấn
+    # 2. Truy vấn - chỉ lấy sản phẩm đã được duyệt
     trendy_products = Product.objects.filter(
+        is_active=True,
         order_details__order__created_at__gte=last_week 
     ).annotate(
         total_sold=Sum('order_details__quantity') 
@@ -117,8 +124,10 @@ def get_trendy_product(request):
 def get_flashsale_product(request):
     """
     Lấy các sản phẩm đang giảm giá sâu (>= 50%).
+    Chỉ trả về sản phẩm đã được admin duyệt (is_active=True).
     """
     flashsale_product = Product.objects.filter(
+        is_active=True,
         discount__gte=50
     ).prefetch_related(
         'variants', 'images', 'category', 'shop'
