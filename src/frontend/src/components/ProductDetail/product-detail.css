@@ -207,9 +207,16 @@
 
 .product-detail__variants {
   display: flex;
-  flex-direction: column;
-  gap: 18px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 24px;
   margin-bottom: 24px;
+  align-items: flex-start;
+}
+
+.product-detail__variant {
+  flex: 1;
+  min-width: 200px;
 }
 
 .product-detail__variant span {
@@ -279,6 +286,21 @@
 
 .product-detail__variant-options--color button.is-selected::after {
   border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Màu trắng cần border tối hơn để dễ nhìn */
+.product-detail__variant-options--color button.is-white {
+  border-color: rgba(200, 200, 200, 0.5);
+}
+
+.product-detail__variant-options--color button.is-white.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 178, 255, 0.3), inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.product-detail__variant-options--color button.is-white.is-selected::after {
+  border-color: rgba(0, 0, 0, 0.3);
+  border-width: 1.5px;
 }
 
 /* Size variant buttons - nút tròn cho size */

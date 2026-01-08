@@ -219,11 +219,19 @@ export default function ProductDetail({ product }) {
                         const colorValue = isColorVariant ? getColorValue(option) : null
                         const buttonStyle = colorValue ? { backgroundColor: colorValue } : {}
                         
+                        // Kiểm tra nếu là màu trắng (để thêm class đặc biệt)
+                        const isWhiteColor = isColorVariant && (
+                          colorValue === "#ffffff" || 
+                          colorValue === "#fff" ||
+                          option.toLowerCase().includes('trắng') ||
+                          option.toLowerCase().includes('white')
+                        )
+                        
                         return (
                           <button
                             key={option}
                             type="button"
-                            className={isSelected ? "is-selected" : ""}
+                            className={`${isSelected ? "is-selected" : ""} ${isWhiteColor ? "is-white" : ""}`}
                             onClick={() => {
                               setSelectedVariants((prev) => ({
                                 ...prev,
