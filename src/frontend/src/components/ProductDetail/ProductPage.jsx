@@ -112,10 +112,6 @@ export default function ProductPage() {
             currency: 'VND',
           }).format(data.base_price) : null,
           images: data.images?.map(img => img.image_url) || [],
-<<<<<<< HEAD
-          // Biến thể đã chuẩn hóa: Màu sắc, Kích cỡ, ...
-          variants: transformedVariants,
-=======
           // Tách riêng Size, Color và các Loại khác từ variants (tự động nhận diện dựa trên giá trị)
           variants: (() => {
             if (!data.variants || data.variants.length === 0) return []
@@ -274,7 +270,7 @@ export default function ProductPage() {
             
             return result
           })(),
->>>>>>> 9a2ae2b8088dd9dc5fc5d26d881de522b58718fd
+          
           rating: data.average_rating || 0,
           soldLabel: `${data.total_sold || 0}`,
           inStock: true,

@@ -219,11 +219,6 @@
   min-width: 200px;
 }
 
-.product-detail__variant {
-  display: flex;
-  flex-direction: column;
-}
-
 .product-detail__variant span {
   display: block;
   font-weight: 600;
