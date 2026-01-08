@@ -810,12 +810,12 @@ const ProductManagement = () => {
                           />
                         </div>
                         <div>
-                          <label style={{ fontSize: "12px" }}>Loại/Kích cỡ</label>
+                          <label style={{ fontSize: "12px" }}>Loại</label>
                           <input
                             type="text"
                             value={variant.attributes.type}
                             onChange={(e) => handleVariantChange(index, "attributes.type", e.target.value)}
-                            placeholder="Loại/Kích cỡ"
+                            placeholder="Loại"
                             style={{ width: "100%" }}
                           />
                         </div>
@@ -955,12 +955,12 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: "12px" }}>Loại/Kích cỡ</label>
+                      <label style={{ fontSize: "12px" }}>Loại</label>
                       <input
                         type="text"
                         value={variant.attributes.type}
                         onChange={(e) => handleVariantChange(index, "attributes.type", e.target.value)}
-                        placeholder="Loại/Kích cỡ"
+                        placeholder="Loại"
                         style={{ width: "100%" }}
                       />
                     </div>

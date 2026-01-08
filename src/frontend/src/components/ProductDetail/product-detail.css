@@ -226,9 +226,11 @@
 }
 
 .product-detail__variant-options {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
 }
 
 .product-detail__variant-options button {

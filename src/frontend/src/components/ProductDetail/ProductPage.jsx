@@ -21,8 +21,79 @@ export default function ProductPage() {
     const loadProduct = async () => {
       try {
         const data = await fetchPublicProductDetail(productId)
-        
-        // Transform data từ backend sang format component cần
+
+        // --- Transform data từ backend sang format component cần ---
+        // 1. Tách "Màu sắc" và "Loại" thành 2 variant groups riêng biệt
+        let transformedVariants = []
+
+        if (Array.isArray(data.variants) && data.variants.length > 0) {
+          // Thu thập tất cả giá trị màu sắc duy nhất
+          const colorSet = new Set()
+          const typeSet = new Set()
+          
+          data.variants.forEach((v) => {
+            const attrs = v.attributes || {}
+            if (attrs.color) {
+              colorSet.add(String(attrs.color).trim())
+            }
+            if (attrs.type) {
+              typeSet.add(String(attrs.type).trim())
+            }
+          })
+
+          // Tạo variant group "Màu sắc" nếu có
+          if (colorSet.size > 0) {
+            transformedVariants.push({
+              label: "Màu sắc",
+              options: Array.from(colorSet).sort(),
+            })
+          }
+
+          // Tạo variant group "Loại" nếu có
+          if (typeSet.size > 0) {
+            transformedVariants.push({
+              label: "Loại",
+              options: Array.from(typeSet).sort(),
+            })
+          }
+          
+          // Nếu không có color hoặc type, nhưng có attributes khác, hiển thị tất cả
+          if (transformedVariants.length === 0) {
+            const allAttrKeys = new Set()
+            data.variants.forEach((v) => {
+              const attrs = v.attributes || {}
+              Object.keys(attrs).forEach(key => allAttrKeys.add(key))
+            })
+
+            allAttrKeys.forEach(key => {
+              const valueSet = new Set()
+              data.variants.forEach((v) => {
+                const attrs = v.attributes || {}
+                const value = attrs[key]
+                if (value !== null && value !== undefined && value !== "") {
+                  valueSet.add(String(value).trim())
+                }
+              })
+              
+              if (valueSet.size > 0) {
+                let label = String(key).trim()
+                // Chuẩn hóa label
+                const keyLower = label.toLowerCase()
+                if (["màu", "mau", "màu sắc", "color", "colour"].includes(keyLower)) {
+                  label = "Màu sắc"
+                } else if (["size", "kích cỡ", "kich co", "cỡ", "co"].includes(keyLower)) {
+                  label = "Kích cỡ"
+                }
+                
+                transformedVariants.push({
+                  label,
+                  options: Array.from(valueSet).sort(),
+                })
+              }
+            })
+          }
+        }
+
         const transformedProduct = {
           id: data.product_id,
           product_id: data.product_id,
@@ -199,6 +270,7 @@ export default function ProductPage() {
             
             return result
           })(),
+          
           rating: data.average_rating || 0,
           soldLabel: `${data.total_sold || 0}`,
           inStock: true,

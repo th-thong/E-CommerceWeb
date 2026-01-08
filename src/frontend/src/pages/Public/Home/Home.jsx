@@ -365,6 +365,7 @@ const HomePage = () => {
       {/* Chỉ hiển thị các section khác khi không đang tìm kiếm */}
       {!isSearching && (
         <>
+          {/* Section 1: Sản phẩm Trendy (Bán Chạy) */}
           {trendyProducts.length > 0 && (
         <section className="promoted-section trendy-section">
           <h2>🔥 Sản Phẩm Trendy (Bán Chạy)</h2>
@@ -420,6 +421,7 @@ const HomePage = () => {
         </section>
       )}
 
+      {/* Section 2: Flash Sale - Hiển thị ngay sau Trendy */}
       {flashSaleProducts.length > 0 && (
         <section className="promoted-section flash-sale-section">
           <h2>⚡ Flash Sale (Giảm Giá Sốc)</h2>

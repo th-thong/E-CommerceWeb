@@ -27,6 +27,13 @@ export default defineConfig(({ mode }) => {
     },
     
     server: {
+      host: '0.0.0.0', // Cho phép truy cập từ bên ngoài container
+      port: 5173,
+      watch: {
+        // Enable polling để detect file changes trong Docker volumes
+        usePolling: true,
+        interval: 1000, // Kiểm tra mỗi 1 giây
+      },
       proxy: {
         // Forward any call starting with API_BASE to Django backend
         [apiBase]: {
