@@ -353,17 +353,63 @@ const AdminProductReview = () => {
                 </div>
               </div>
 
-              {/* Danh mục và Shop */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div>
-                  <strong>Danh mục:</strong>{" "}
-                  {detailProduct.category?.name || detailProduct.category || "—"}
-                </div>
-                <div>
-                  <strong>Shop:</strong>{" "}
-                  {detailProduct.shop?.shop_name || detailProduct.shop?.name || "—"}
-                </div>
+              {/* Danh mục */}
+              <div>
+                <strong>Danh mục:</strong>{" "}
+                {detailProduct.category?.name || detailProduct.category || "—"}
               </div>
+
+              {/* Thông tin Shop */}
+              {detailProduct.shop && (
+                <div style={{
+                  padding: 16,
+                  background: "rgba(255, 255, 255, 0.05)",
+                  borderRadius: 8,
+                  border: "1px solid rgba(255, 255, 255, 0.1)"
+                }}>
+                  <strong style={{ fontSize: "1.1em", marginBottom: 12, display: "block" }}>
+                    Thông tin Shop
+                  </strong>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <div>
+                      <strong>Tên shop:</strong>{" "}
+                      {detailProduct.shop.shop_name || detailProduct.shop.name || "—"}
+                    </div>
+                    {detailProduct.shop.shop_description && (
+                      <div>
+                        <strong>Mô tả shop:</strong>
+                        <p style={{ margin: "8px 0 0 0", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                          {detailProduct.shop.shop_description}
+                        </p>
+                      </div>
+                    )}
+                    {detailProduct.shop.shop_address && (
+                      <div>
+                        <strong>Địa chỉ:</strong> {detailProduct.shop.shop_address}
+                      </div>
+                    )}
+                    {detailProduct.shop.shop_phone_number && (
+                      <div>
+                        <strong>Số điện thoại:</strong> {detailProduct.shop.shop_phone_number}
+                      </div>
+                    )}
+                    {detailProduct.shop.shop_email && (
+                      <div>
+                        <strong>Email:</strong> {detailProduct.shop.shop_email}
+                      </div>
+                    )}
+                    {detailProduct.shop.owner && (
+                      <div>
+                        <strong>Chủ shop:</strong>{" "}
+                        {detailProduct.shop.owner.user_name || 
+                         detailProduct.shop.owner.username || 
+                         detailProduct.shop.owner.email || 
+                         "—"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Variants */}
               {detailProduct.variants && detailProduct.variants.length > 0 && (

@@ -204,6 +204,8 @@ export default function ProductPage() {
           inStock: true,
           stockLabel: "Còn hàng",
           categoryName: data.category?.name || "Sản phẩm",
+          // Thêm thông tin shop
+          shop: data.shop || null,
           // Thêm dữ liệu gốc để có thể dùng cho giỏ hàng
           _originalData: data
         }
