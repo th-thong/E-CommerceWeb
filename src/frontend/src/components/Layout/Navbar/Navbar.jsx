@@ -15,6 +15,7 @@ const Navbar = () => {
   const [authMode, setAuthMode] = useState("login");
   const [cartOpen, setCartOpen] = useState(false);
   const [showSellerModal, setShowSellerModal] = useState(false);
+  const [isAlreadySeller, setIsAlreadySeller] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { getTotalItems, clearCart, reloadCartFromStorage } = useCart();
   const [tokens, setTokens] = useState(() => {
@@ -104,22 +105,60 @@ const Navbar = () => {
         navigate("/seller");
       } else {
         // Nếu không phải seller, hiển thị popup
+        setIsAlreadySeller(false);
         setShowSellerModal(true);
       }
     } catch (err) {
       console.error("Error checking seller permission:", err);
       // Nếu có lỗi, vẫn hiển thị popup
+      setIsAlreadySeller(false);
       setShowSellerModal(true);
     }
   };
 
   const handleSellerModalYes = () => {
     setShowSellerModal(false);
+    setIsAlreadySeller(false);
     navigate("/seller-registration");
   };
 
   const handleSellerModalNo = () => {
     setShowSellerModal(false);
+    setIsAlreadySeller(false);
+  };
+
+  const handleCloseSellerModal = () => {
+    setShowSellerModal(false);
+    setIsAlreadySeller(false);
+  };
+
+  const handleBecomeSellerClick = async (e) => {
+    e.preventDefault();
+    
+    // Nếu chưa đăng nhập, chuyển đến trang đăng ký
+    if (!tokens?.access) {
+      navigate("/seller-registration");
+      return;
+    }
+
+    // Kiểm tra quyền seller
+    try {
+      const userProfile = await getProfile(tokens.access);
+      setProfile(userProfile);
+
+      if (userProfile.role === "Seller") {
+        // Nếu đã là seller, hiển thị thông báo
+        setIsAlreadySeller(true);
+        setShowSellerModal(true);
+      } else {
+        // Nếu chưa là seller, chuyển đến trang đăng ký
+        navigate("/seller-registration");
+      }
+    } catch (err) {
+      console.error("Error checking seller permission:", err);
+      // Nếu có lỗi, vẫn chuyển đến trang đăng ký
+      navigate("/seller-registration");
+    }
   };
 
   const handleSearch = (e) => {
@@ -146,7 +185,7 @@ const Navbar = () => {
           <div className="navbar-links">
             <Link to="/admin">Kênh Admin</Link> |
             <a href="#" onClick={handleSellerLinkClick} style={{ cursor: 'pointer' }}>Kênh người bán</a> |
-            <Link to="/seller-registration">Trở thành người bán ShopLiteX</Link>
+            <a href="#" onClick={handleBecomeSellerClick} style={{ cursor: 'pointer' }}>Trở thành người bán ShopLiteX</a>
             <span className="social-icons">
               <i className="fab fa-facebook"></i>
               <i className="fab fa-instagram"></i>
@@ -290,61 +329,122 @@ const Navbar = () => {
               marginBottom: '30px',
               lineHeight: '1.6'
             }}>
-              Tài khoản chưa được cấp quyền người bán, bạn có muốn đăng kí trở thành người bán không?
+              {isAlreadySeller 
+                ? 'Bạn đã là người bán rồi! Bạn có thể truy cập kênh người bán để quản lý shop của mình.'
+                : 'Tài khoản chưa được cấp quyền người bán, bạn có muốn đăng kí trở thành người bán không?'
+              }
             </p>
             <div style={{
               display: 'flex',
               gap: '12px',
               justifyContent: 'center'
             }}>
-              <button
-                onClick={handleSellerModalNo}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#f5f5f5',
-                  fontFamily: 'Rajdhani, sans-serif',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.12)'
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.08)'
-                }}
-              >
-                Không
-              </button>
-              <button
-                onClick={handleSellerModalYes}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  background: 'linear-gradient(45deg, #ff5e00, #ff8c42)',
-                  border: 'none',
-                  color: '#0a0a0a',
-                  fontFamily: 'Rajdhani, sans-serif',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.transform = 'translateY(-2px)'
-                  e.target.style.boxShadow = '0 8px 20px rgba(255, 94, 0, 0.35)'
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.transform = 'translateY(0)'
-                  e.target.style.boxShadow = 'none'
-                }}
-              >
-                Có
-              </button>
+              {isAlreadySeller ? (
+                <>
+                  <button
+                    onClick={handleCloseSellerModal}
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#f5f5f5',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.background = 'rgba(255, 255, 255, 0.12)'
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+                    }}
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleCloseSellerModal();
+                      navigate("/seller");
+                    }}
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: 'linear-gradient(45deg, #ff5e00, #ff8c42)',
+                      border: 'none',
+                      color: '#0a0a0a',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.transform = 'translateY(-2px)'
+                      e.target.style.boxShadow = '0 8px 20px rgba(255, 94, 0, 0.35)'
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.transform = 'translateY(0)'
+                      e.target.style.boxShadow = 'none'
+                    }}
+                  >
+                    Vào kênh người bán
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleSellerModalNo}
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#f5f5f5',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.background = 'rgba(255, 255, 255, 0.12)'
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+                    }}
+                  >
+                    Không
+                  </button>
+                  <button
+                    onClick={handleSellerModalYes}
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: 'linear-gradient(45deg, #ff5e00, #ff8c42)',
+                      border: 'none',
+                      color: '#0a0a0a',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.transform = 'translateY(-2px)'
+                      e.target.style.boxShadow = '0 8px 20px rgba(255, 94, 0, 0.35)'
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.transform = 'translateY(0)'
+                      e.target.style.boxShadow = 'none'
+                    }}
+                  >
+                    Có
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
