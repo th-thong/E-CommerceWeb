@@ -91,17 +91,26 @@ const Cart = ({ isOpen, onClose }) => {
                       </div>
 
                       {/* Hiển thị thông tin variant */}
-                      {item.variant && item.variant.attributes && (
-                        <div className="cart-item-variant">
-                          {Object.entries(item.variant.attributes).map(
-                            ([key, value]) => (
+                      {item.variant && item.variant.attributes && (() => {
+                        const entries = Object.entries(item.variant.attributes).filter(
+                          ([, value]) =>
+                            value !== null &&
+                            value !== undefined &&
+                            String(value).trim() !== ''
+                        )
+
+                        if (entries.length === 0) return null
+
+                        return (
+                          <div className="cart-item-variant">
+                            {entries.map(([key, value]) => (
                               <span key={key}>
                                 {key}: {value}
                               </span>
-                            )
-                          )}
-                        </div>
-                      )}
+                            ))}
+                          </div>
+                        )
+                      })()}
 
                       {/* Giá */}
                       <div className="cart-item-price">

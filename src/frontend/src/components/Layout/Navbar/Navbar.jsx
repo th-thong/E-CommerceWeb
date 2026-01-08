@@ -7,6 +7,7 @@ import Cart from "@/components/Cart/Cart";
 import { useCart } from "@/contexts/CartContext";
 
 const TOKEN_KEY = "auth_tokens";
+const CART_KEY_PREFIX = 'cart_';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const Navbar = () => {
   const [isAlreadySeller, setIsAlreadySeller] = useState(false);
   const [isPendingSeller, setIsPendingSeller] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { getTotalItems, clearCart, reloadCartFromStorage } = useCart();
+  const { getTotalItems, clearCart, reloadCartFromStorage, cartItems } = useCart();
   const [tokens, setTokens] = useState(() => {
     const saved = localStorage.getItem(TOKEN_KEY);
     return saved ? JSON.parse(saved) : null;
@@ -52,14 +53,32 @@ const Navbar = () => {
       if (!tokens?.access) return;
       try {
         const data = await getProfile(tokens.access);
+        console.log('[Navbar] Profile fetched, user_id:', data.user_id);
         setProfile(data);
         setProfileError(null);
+        
+        // Lưu user_id vào tokens để dùng cho giỏ hàng (chỉ khi chưa có hoặc thay đổi)
+        if (data.user_id && (!tokens.user_id || tokens.user_id !== data.user_id)) {
+          const updatedTokens = { ...tokens, user_id: data.user_id };
+          setTokens(updatedTokens);
+          localStorage.setItem(TOKEN_KEY, JSON.stringify(updatedTokens));
+          console.log('[Navbar] User ID saved to tokens:', data.user_id);
+          
+          // Dispatch custom event để CartContext biết auth đã thay đổi
+          window.dispatchEvent(new Event('authTokensChanged'));
+          
+          // Đợi một chút để đảm bảo localStorage đã được cập nhật
+          setTimeout(() => {
+            reloadCartFromStorage();
+          }, 200);
+        }
       } catch (err) {
+        console.error('[Navbar] Error fetching profile:', err);
         setProfileError("Không lấy được thông tin user");
       }
     };
     fetchProfile();
-  }, [tokens]);
+  }, [tokens?.access]); // Chỉ chạy khi access token thay đổi
 
   // Đồng bộ searchQuery với URL params
   useEffect(() => {
@@ -75,15 +94,51 @@ const Navbar = () => {
 
   const handleAuthSuccess = (data) => {
     setTokens(data);
-    // Sau khi đăng nhập, tải lại giỏ hàng của user
-    reloadCartFromStorage();
+    // Dispatch event để CartContext biết auth đã thay đổi
+    window.dispatchEvent(new Event('authTokensChanged'));
+    // Sau khi đăng nhập, đợi profile được fetch và user_id được lưu trước khi reload cart
+    // reloadCartFromStorage sẽ được gọi trong useEffect fetchProfile
   };
 
   const handleLogout = () => {
-    // Reset giỏ hàng khi đăng xuất
+    // Lưu giỏ hàng hiện tại vào localStorage với userId trước khi đăng xuất
+    // Để khi đăng nhập lại sẽ tự động tải lên
+    if (cartItems.length > 0) {
+      try {
+        // Lấy user_id từ tokens (có thể là từ profile hoặc decode JWT)
+        const userId = tokens?.user_id || (tokens?.access ? decodeJWT(tokens.access) : null);
+        
+        if (userId) {
+          const userKey = `${CART_KEY_PREFIX}${userId}`;
+          localStorage.setItem(userKey, JSON.stringify(cartItems));
+          console.log('[Navbar] Cart saved before logout:', cartItems.length, 'items, key:', userKey);
+        } else {
+          // Fallback: lưu vào guest cart nếu không có user_id
+          localStorage.setItem('cart_guest', JSON.stringify(cartItems));
+          console.log('[Navbar] Cart saved to guest before logout:', cartItems.length, 'items');
+        }
+      } catch (error) {
+        console.error('[Navbar] Error saving cart before logout:', error);
+      }
+    }
+    
+    // Reset giỏ hàng UI khi đăng xuất (nhưng đã lưu vào localStorage ở trên)
     clearCart();
     setTokens(null);
     navigate("/");
+  };
+  
+  // Helper function để decode JWT (copy từ CartContext)
+  const decodeJWT = (token) => {
+    try {
+      if (!token) return null;
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const payload = JSON.parse(atob(parts[1]));
+      return payload.user_id || payload.userId || null;
+    } catch (error) {
+      return null;
+    }
   };
 
   const handleSellerLinkClick = async (e) => {

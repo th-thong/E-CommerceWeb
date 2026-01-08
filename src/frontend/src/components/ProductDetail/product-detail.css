@@ -212,6 +212,11 @@
   margin-bottom: 24px;
 }
 
+.product-detail__variant {
+  display: flex;
+  flex-direction: column;
+}
+
 .product-detail__variant span {
   display: block;
   font-weight: 600;
@@ -219,9 +224,11 @@
 }
 
 .product-detail__variant-options {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
 }
 
 .product-detail__variant-options button {

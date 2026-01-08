@@ -74,18 +74,49 @@ export default function ProductDetail({ product }) {
     return Math.min(99, Math.max(1, parsed))
   }
 
+  const getSelectedBackendVariant = () => {
+    const originalProduct = product._originalData
+    if (!originalProduct?.variants || originalProduct.variants.length === 0) {
+      return null
+    }
+
+    // Lấy giá trị đã chọn cho từng variant group (Màu sắc, Loại, ...)
+    const selectedColor = selectedVariants["Màu sắc"] || null
+    const selectedType = selectedVariants["Loại"] || null
+
+    // Tìm variant trong backend khớp với các thuộc tính đã chọn
+    const matchedVariant = originalProduct.variants.find((v) => {
+      const attrs = v.attributes || {}
+      const attrColor = attrs.color ? String(attrs.color).trim() : null
+      const attrType = attrs.type ? String(attrs.type).trim() : null
+
+      // Nếu có cả màu và loại đã chọn, phải khớp cả 2
+      if (selectedColor && selectedType) {
+        return attrColor === selectedColor && attrType === selectedType
+      }
+      // Nếu chỉ có màu đã chọn, khớp theo màu
+      if (selectedColor && !selectedType) {
+        return attrColor === selectedColor
+      }
+      // Nếu chỉ có loại đã chọn, khớp theo loại
+      if (!selectedColor && selectedType) {
+        return attrType === selectedType
+      }
+
+      // Nếu không có gì được chọn, trả về variant đầu tiên
+      return false
+    })
+
+    // Trả về variant đã tìm thấy hoặc variant đầu tiên làm mặc định
+    return matchedVariant || originalProduct.variants[0]
+  }
+
   const handleAddToCart = () => {
     if (!product || !product._originalData) return
     
-    // Lấy dữ liệu gốc từ backend
     const originalProduct = product._originalData
-    
-    // Tìm variant phù hợp với selectedVariants (nếu có)
-    let selectedVariant = null
-    if (originalProduct.variants && originalProduct.variants.length > 0) {
-      selectedVariant = originalProduct.variants[0] // Mặc định lấy variant đầu tiên
-    }
-    
+    const selectedVariant = getSelectedBackendVariant()
+
     addToCart(originalProduct, selectedVariant, quantity)
     alert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`)
   }
@@ -94,10 +125,7 @@ export default function ProductDetail({ product }) {
     if (!product || !product._originalData) return
     
     const originalProduct = product._originalData
-    let selectedVariant = null
-    if (originalProduct.variants && originalProduct.variants.length > 0) {
-      selectedVariant = originalProduct.variants[0]
-    }
+    const selectedVariant = getSelectedBackendVariant()
     
     addToCart(originalProduct, selectedVariant, quantity)
     navigate('/checkout')
@@ -151,10 +179,24 @@ export default function ProductDetail({ product }) {
     return <p className="panel__description">{tagline}</p>
   }
 
-  const hasDiscount =
-    Number(product.discountPercent) > 0 &&
-    !!product.originalPriceLabel &&
-    product.originalPriceLabel !== product.priceLabel
+  const selectedBackendVariant = getSelectedBackendVariant()
+  const basePriceNumber = selectedBackendVariant?.price ?? product.base_price
+  const discountPercent = Number(product.discountPercent) || 0
+  const hasDiscount = discountPercent > 0
+
+  const priceNumber = Number(basePriceNumber) || 0
+  const discountedPriceNumber = hasDiscount
+    ? priceNumber * (1 - discountPercent / 100)
+    : priceNumber
+
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value)
+
+  const currentPriceLabel = formatCurrency(discountedPriceNumber)
+  const originalPriceLabel = hasDiscount ? formatCurrency(priceNumber) : null
 
   return (
     <section id="product-detail" className="product-detail">
@@ -195,9 +237,9 @@ export default function ProductDetail({ product }) {
           </div>
 
           <div className="product-detail__pricing">
-            <strong>{product.priceLabel}</strong>
-            {hasDiscount && <span className="product-detail__price-old">{product.originalPriceLabel}</span>}
-            {hasDiscount && <span className="product-detail__badge">-{product.discountPercent}%</span>}
+            <strong>{currentPriceLabel}</strong>
+            {hasDiscount && <span className="product-detail__price-old">{originalPriceLabel}</span>}
+            {hasDiscount && <span className="product-detail__badge">-{discountPercent}%</span>}
           </div>
 
           <div className={`product-detail__stock ${product.inStock ? "in-stock" : "out-stock"}`}>

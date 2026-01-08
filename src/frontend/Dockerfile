@@ -12,4 +12,6 @@ COPY . .
 
 EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--", "--host"]
+# Chạy Vite dev server với --host để có thể truy cập từ bên ngoài container
+# và --watch để enable file watching
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
