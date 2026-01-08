@@ -62,6 +62,12 @@ export default function ProductDetail({ product }) {
       })
       setSelectedVariants(initialVariants)
     }
+    
+    // Debug: log shop data
+    if (product?.shop || product?._originalData?.shop) {
+      console.log('Product shop data:', product.shop || product._originalData?.shop)
+      console.log('Full product data:', product)
+    }
   }, [product])
 
   if (!product) {
@@ -261,11 +267,19 @@ export default function ProductDetail({ product }) {
                         const colorValue = isColorVariant ? getColorValue(option) : null
                         const buttonStyle = colorValue ? { backgroundColor: colorValue } : {}
                         
+                        // Kiểm tra nếu là màu trắng (để thêm class đặc biệt)
+                        const isWhiteColor = isColorVariant && (
+                          colorValue === "#ffffff" || 
+                          colorValue === "#fff" ||
+                          option.toLowerCase().includes('trắng') ||
+                          option.toLowerCase().includes('white')
+                        )
+                        
                         return (
                           <button
                             key={option}
                             type="button"
-                            className={isSelected ? "is-selected" : ""}
+                            className={`${isSelected ? "is-selected" : ""} ${isWhiteColor ? "is-white" : ""}`}
                             onClick={() => {
                               setSelectedVariants((prev) => ({
                                 ...prev,
@@ -377,6 +391,96 @@ export default function ProductDetail({ product }) {
             ))}
           </div>
         </article>
+
+        {/* Thông tin Shop */}
+        {(() => {
+          // Lấy shop từ product hoặc _originalData
+          const shop = product.shop || product._originalData?.shop
+          
+          if (!shop) {
+            // Nếu không có shop, không hiển thị section
+            return null
+          }
+          
+          // Xử lý trường hợp shop là ID (số) hoặc object
+          if (typeof shop === 'number' || typeof shop === 'string') {
+            // Shop chỉ là ID, không có thông tin chi tiết
+            return null
+          }
+          
+          // Lấy các thông tin shop
+          const shopName = shop.shop_name || shop.name || shop.shopName
+          const shopDescription = shop.description || shop.shop_description || shop.shopDescription
+          const shopAddress = shop.shop_address || shop.address || shop.shopAddress
+          const shopPhone = shop.shop_phone_number || shop.phone_number || shop.phone || shop.shopPhoneNumber
+          const shopEmail = shop.shop_email || shop.email || shop.shopEmail
+          
+          const hasShopInfo = shopName || shopDescription || shopAddress || shopPhone || shopEmail
+          
+          if (!hasShopInfo) return null
+          
+          return (
+            <article className="panel">
+              <h2>Thông tin Shop</h2>
+              <div style={{
+                padding: 20,
+                background: "rgba(255, 255, 255, 0.03)",
+                borderRadius: 12,
+                border: "1px solid rgba(255, 255, 255, 0.08)"
+              }}>
+                <div style={{ display: "grid", gap: 12 }}>
+                  {shopName && (
+                    <div>
+                      <strong style={{ fontSize: "1.2em", color: "var(--accent)" }}>
+                        {shopName}
+                      </strong>
+                    </div>
+                  )}
+                  {shopDescription && (
+                    <div>
+                      <p style={{ 
+                        margin: 0, 
+                        whiteSpace: "pre-wrap", 
+                        lineHeight: 1.6,
+                        color: "rgba(255, 255, 255, 0.8)"
+                      }}>
+                        {shopDescription}
+                      </p>
+                    </div>
+                  )}
+                  {(shopAddress || shopPhone || shopEmail) && (
+                    <div style={{ 
+                      display: "grid", 
+                      gap: 8, 
+                      marginTop: 8,
+                      paddingTop: 16,
+                      borderTop: "1px solid rgba(255, 255, 255, 0.1)"
+                    }}>
+                      {shopAddress && (
+                        <div className="panel__spec">
+                          <dt>Địa chỉ:</dt>
+                          <dd>{shopAddress}</dd>
+                        </div>
+                      )}
+                      {shopPhone && (
+                        <div className="panel__spec">
+                          <dt>Số điện thoại:</dt>
+                          <dd>{shopPhone}</dd>
+                        </div>
+                      )}
+                      {shopEmail && (
+                        <div className="panel__spec">
+                          <dt>Email:</dt>
+                          <dd>{shopEmail}</dd>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </article>
+          )
+        })()}
       </div>
     </section>
   )

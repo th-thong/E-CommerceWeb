@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.db import transaction
 from .models import Product, ProductImage, ProductVariant
 from .utils import upload_image, rename_product_image
+from shop.serializers import ShopSerializer
 import json
 from django.conf import settings
 
@@ -40,6 +41,7 @@ class ProductSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(source='id', read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     variants = ProductVariantSerializer(many=True, read_only=True)
+    shop = ShopSerializer(read_only=True)
     
     # 1. Nhận danh sách file ảnh upload
     uploaded_images = serializers.ListField(

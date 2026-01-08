@@ -9,6 +9,7 @@ const AdminProductReview = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(null) // productId đang xử lý
+  const [detailProduct, setDetailProduct] = useState(null) // Sản phẩm đang xem chi tiết
 
   const getToken = () => {
     const saved = localStorage.getItem("auth_tokens")
@@ -82,6 +83,65 @@ const AdminProductReview = () => {
       return product.images[0].image_url
     }
     return null
+  }
+
+  // Map attribute key sang label tiếng Việt
+  const getAttributeLabel = (key, value) => {
+    const keyLower = key.toLowerCase()
+    const valueStr = String(value).trim()
+    
+    // Kiểm tra nếu là size
+    const isSizeValue = (val) => {
+      const valLower = val.toLowerCase()
+      if (/^(xs|s|m|l|xl|xxl|xxxl)$/i.test(val)) return true
+      if (/^\d+(xs|s|m|l|xl|xxl)$/i.test(val)) return true
+      if (/^\d{2,3}$/.test(val)) return true
+      return false
+    }
+    
+    // Kiểm tra nếu là màu
+    const isColorValue = (val) => {
+      const valLower = val.toLowerCase()
+      const colorKeywords = [
+        'đen', 'trắng', 'đỏ', 'xanh', 'vàng', 'hồng', 'cam', 'tím', 'nâu', 
+        'kem', 'be', 'ghi', 'xám', 'navy', 'black', 'white', 'red', 'blue', 
+        'yellow', 'pink', 'orange', 'purple', 'brown', 'cream', 'beige', 
+        'gray', 'grey', 'green'
+      ]
+      return colorKeywords.some(c => valLower.includes(c))
+    }
+    
+    // Map key name
+    if (keyLower.includes('size') || keyLower.includes('cỡ')) {
+      return 'Size'
+    }
+    if (keyLower.includes('color') || keyLower.includes('màu')) {
+      return 'Màu sắc'
+    }
+    
+    // Nếu key là "type" hoặc "loại" và giá trị là size -> "Size"
+    if ((keyLower === 'type' || keyLower === 'loại') && isSizeValue(valueStr)) {
+      return 'Size'
+    }
+    
+    // Nếu key là "type" hoặc "loại" và giá trị là màu -> "Màu sắc"
+    if ((keyLower === 'type' || keyLower === 'loại') && isColorValue(valueStr)) {
+      return 'Màu sắc'
+    }
+    
+    // Map các key thông dụng khác
+    const labelMap = {
+      'type': 'Loại',
+      'loại': 'Loại',
+      'category': 'Loại',
+      'capacity': 'Dung lượng',
+      'storage': 'Dung lượng',
+      'dung lượng': 'Dung lượng',
+      'ram': 'RAM',
+      'rom': 'ROM'
+    }
+    
+    return labelMap[keyLower] || key
   }
 
   return (
@@ -170,12 +230,21 @@ const AdminProductReview = () => {
                       {actionLoading === product.product_id ? (
                         <span style={{ color: "#aaa" }}>Đang xử lý...</span>
                       ) : (
-                        <button
-                          className="accept-btn"
-                          onClick={() => handleApprove(product.product_id)}
-                        >
-                          Phê duyệt
-                        </button>
+                        <>
+                          <button
+                            className="edit-btn"
+                            onClick={() => setDetailProduct(product)}
+                            style={{ marginRight: 8 }}
+                          >
+                            Xem chi tiết
+                          </button>
+                          <button
+                            className="accept-btn"
+                            onClick={() => handleApprove(product.product_id)}
+                          >
+                            Phê duyệt
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
@@ -183,6 +252,205 @@ const AdminProductReview = () => {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Modal xem chi tiết sản phẩm */}
+      {detailProduct && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+          onClick={() => setDetailProduct(null)}
+        >
+          <div
+            style={{
+              background: "#111827",
+              color: "#e5e7eb",
+              padding: 24,
+              borderRadius: 12,
+              width: "90%",
+              maxWidth: "800px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+              <h3 style={{ margin: 0 }}>Chi tiết sản phẩm</h3>
+              <button
+                className="reject-btn"
+                onClick={() => setDetailProduct(null)}
+                style={{ backgroundColor: "#374151", padding: "8px 16px" }}
+              >
+                Đóng
+              </button>
+            </div>
+
+            <div style={{ display: "grid", gap: 16 }}>
+              {/* ID và Trạng thái */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div><strong>ID:</strong> {detailProduct.product_id}</div>
+                <div><strong>Trạng thái:</strong> <span className="status pending">Chờ duyệt</span></div>
+              </div>
+
+              {/* Tên sản phẩm */}
+              <div>
+                <strong>Tên sản phẩm:</strong>
+                <p style={{ margin: "8px 0 0 0", fontSize: "1.1em" }}>{detailProduct.product_name}</p>
+              </div>
+
+              {/* Hình ảnh */}
+              {detailProduct.images && detailProduct.images.length > 0 && (
+                <div>
+                  <strong>Hình ảnh:</strong>
+                  <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                    {detailProduct.images.map((img, index) => (
+                      <img
+                        key={index}
+                        src={img.image_url}
+                        alt={`${detailProduct.product_name} ${index + 1}`}
+                        style={{
+                          width: 100,
+                          height: 100,
+                          objectFit: "cover",
+                          borderRadius: 8,
+                          border: "1px solid rgba(255,255,255,0.1)",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Mô tả */}
+              <div>
+                <strong>Mô tả:</strong>
+                <p style={{ margin: "8px 0 0 0", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                  {detailProduct.description || "—"}
+                </p>
+              </div>
+
+              {/* Giá và Giảm giá */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <strong>Giá gốc:</strong> {formatPrice(detailProduct.base_price)}₫
+                </div>
+                <div>
+                  <strong>Giảm giá:</strong>{" "}
+                  {detailProduct.discount > 0 ? (
+                    <span style={{ color: "#ff6b6b" }}>-{detailProduct.discount}%</span>
+                  ) : (
+                    <span style={{ color: "#888" }}>0%</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Danh mục */}
+              <div>
+                <strong>Danh mục:</strong>{" "}
+                {detailProduct.category?.name || detailProduct.category || "—"}
+              </div>
+
+              {/* Thông tin Shop */}
+              {detailProduct.shop && (
+                <div style={{
+                  padding: 16,
+                  background: "rgba(255, 255, 255, 0.05)",
+                  borderRadius: 8,
+                  border: "1px solid rgba(255, 255, 255, 0.1)"
+                }}>
+                  <strong style={{ fontSize: "1.1em", marginBottom: 12, display: "block" }}>
+                    Thông tin Shop
+                  </strong>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <div>
+                      <strong>Tên shop:</strong>{" "}
+                      {detailProduct.shop.shop_name || detailProduct.shop.name || "—"}
+                    </div>
+                    {detailProduct.shop.shop_description && (
+                      <div>
+                        <strong>Mô tả shop:</strong>
+                        <p style={{ margin: "8px 0 0 0", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                          {detailProduct.shop.shop_description}
+                        </p>
+                      </div>
+                    )}
+                    {detailProduct.shop.shop_address && (
+                      <div>
+                        <strong>Địa chỉ:</strong> {detailProduct.shop.shop_address}
+                      </div>
+                    )}
+                    {detailProduct.shop.shop_phone_number && (
+                      <div>
+                        <strong>Số điện thoại:</strong> {detailProduct.shop.shop_phone_number}
+                      </div>
+                    )}
+                    {detailProduct.shop.shop_email && (
+                      <div>
+                        <strong>Email:</strong> {detailProduct.shop.shop_email}
+                      </div>
+                    )}
+                    {detailProduct.shop.owner && (
+                      <div>
+                        <strong>Chủ shop:</strong>{" "}
+                        {detailProduct.shop.owner.user_name || 
+                         detailProduct.shop.owner.username || 
+                         detailProduct.shop.owner.email || 
+                         "—"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Variants */}
+              {detailProduct.variants && detailProduct.variants.length > 0 && (
+                <div>
+                  <strong>Biến thể sản phẩm:</strong>
+                  <div style={{ marginTop: 8 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                          <th style={{ padding: "8px", textAlign: "left" }}>Giá</th>
+                          <th style={{ padding: "8px", textAlign: "left" }}>Số lượng</th>
+                          <th style={{ padding: "8px", textAlign: "left" }}>Thuộc tính</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detailProduct.variants.map((variant, index) => (
+                          <tr key={index} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                            <td style={{ padding: "8px" }}>{formatPrice(variant.price)}₫</td>
+                            <td style={{ padding: "8px" }}>{variant.quantity}</td>
+                            <td style={{ padding: "8px" }}>
+                              {variant.attributes && Object.keys(variant.attributes).length > 0 ? (
+                                <div>
+                                  {Object.entries(variant.attributes).map(([key, value]) => (
+                                    <div key={key} style={{ fontSize: "0.9em" }}>
+                                      <strong>{getAttributeLabel(key, value)}:</strong> {String(value)}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span style={{ color: "#888" }}>—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -405,26 +405,57 @@ const ProductManagement = () => {
 
     setIsSubmitting(true)
     try {
+      // Validate và convert base_price thành số
+      const basePrice = Number.parseFloat(productForm.base_price)
+      if (!basePrice || basePrice <= 0 || isNaN(basePrice)) {
+        throw new Error("Giá sản phẩm phải là số lớn hơn 0")
+      }
+      
       const formData = new FormData()
       formData.append("product_name", productForm.product_name)
-      formData.append("base_price", productForm.base_price)
+      formData.append("base_price", basePrice.toString())
       formData.append("category", productForm.category)
       formData.append("description", productForm.description)
-      formData.append("discount", "0")
+      formData.append("discount", String(productForm.discount || "0"))
 
       productForm.uploaded_images.forEach((file) => {
         formData.append("uploaded_images", file)
       })
 
       // Convert variants to proper format with numeric values
-      const formattedVariants = variants.map((v) => ({
-        price: Number.parseInt(v.price) || 0,
-        quantity: Number.parseInt(v.quantity) || 0,
-        attributes: {
-          color: v.attributes.color || "",
-          type: v.attributes.type || "",
-        },
-      }))
+      const formattedVariants = variants.map((v) => {
+        const price = Number.parseFloat(v.price)
+        const quantity = Number.parseInt(v.quantity)
+        
+        // Validate price and quantity
+        if (!price || price <= 0 || isNaN(price)) {
+          throw new Error(`Giá của biến thể phải là số lớn hơn 0`)
+        }
+        if (!quantity || quantity <= 0 || isNaN(quantity)) {
+          throw new Error(`Số lượng của biến thể phải là số lớn hơn 0`)
+        }
+        
+        // Build attributes object - chỉ thêm key nếu có giá trị (không rỗng)
+        const attributes = {}
+        if (v.attributes?.color && String(v.attributes.color).trim()) {
+          attributes.color = String(v.attributes.color).trim()
+        }
+        if (v.attributes?.type && String(v.attributes.type).trim()) {
+          attributes.type = String(v.attributes.type).trim()
+        }
+        // Nếu có các attributes khác (size, loại, etc.)
+        Object.keys(v.attributes || {}).forEach(key => {
+          if (key !== 'color' && key !== 'type' && v.attributes[key] && String(v.attributes[key]).trim()) {
+            attributes[key] = String(v.attributes[key]).trim()
+          }
+        })
+        
+        return {
+          price: price,
+          quantity: quantity,
+          attributes: attributes, // Có thể là object rỗng {} nếu không có attributes
+        }
+      })
 
       formData.append("variants_input", JSON.stringify(formattedVariants))
 
