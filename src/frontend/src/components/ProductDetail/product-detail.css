@@ -207,16 +207,13 @@
 
 .product-detail__variants {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 24px;
   margin-bottom: 24px;
-  align-items: flex-start;
 }
 
 .product-detail__variant {
-  flex: 1;
-  min-width: 200px;
+  width: 100%;
 }
 
 .product-detail__variant span {

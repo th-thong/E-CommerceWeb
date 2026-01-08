@@ -104,7 +104,7 @@ export async function getProfile(accessToken) {
 
 // Cập nhật thông tin cá nhân
 export async function updateProfile(accessToken, data) {
-  const res = await fetch('/api/users/me/', {
+  const res = await fetch(`${USERS_API_BASE}/me/`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -115,7 +115,22 @@ export async function updateProfile(accessToken, data) {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `Failed to update profile (${res.status})`);
+    let errorMessage = `Failed to update profile (${res.status})`;
+    
+    // Cố gắng parse JSON error response
+    try {
+      const errorObj = JSON.parse(text);
+      errorMessage = errorObj.error || errorObj.message || errorMessage;
+    } catch (e) {
+      // Nếu không phải JSON, dùng text trực tiếp nếu có
+      if (text && text.trim()) {
+        errorMessage = text;
+      }
+    }
+    
+    const error = new Error(errorMessage);
+    error.status = res.status;
+    throw error;
   }
 
   return res.json();

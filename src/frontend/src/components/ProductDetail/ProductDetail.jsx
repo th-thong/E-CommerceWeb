@@ -86,31 +86,52 @@ export default function ProductDetail({ product }) {
       return null
     }
 
-    // Lấy giá trị đã chọn cho từng variant group (Màu sắc, Loại, ...)
-    const selectedColor = selectedVariants["Màu sắc"] || null
-    const selectedType = selectedVariants["Loại"] || null
+    // Nếu không có variant groups được hiển thị, trả về variant đầu tiên
+    if (!product.variants || product.variants.length === 0) {
+      return originalProduct.variants[0]
+    }
 
-    // Tìm variant trong backend khớp với các thuộc tính đã chọn
-    const matchedVariant = originalProduct.variants.find((v) => {
-      const attrs = v.attributes || {}
-      const attrColor = attrs.color ? String(attrs.color).trim() : null
-      const attrType = attrs.type ? String(attrs.type).trim() : null
-
-      // Nếu có cả màu và loại đã chọn, phải khớp cả 2
-      if (selectedColor && selectedType) {
-        return attrColor === selectedColor && attrType === selectedType
-      }
-      // Nếu chỉ có màu đã chọn, khớp theo màu
-      if (selectedColor && !selectedType) {
-        return attrColor === selectedColor
-      }
-      // Nếu chỉ có loại đã chọn, khớp theo loại
-      if (!selectedColor && selectedType) {
-        return attrType === selectedType
-      }
-
-      // Nếu không có gì được chọn, trả về variant đầu tiên
-      return false
+    // Tìm variant trong backend khớp với TẤT CẢ các thuộc tính đã chọn
+    const matchedVariant = originalProduct.variants.find((backendVariant) => {
+      const backendAttrs = backendVariant.attributes || {}
+      
+      // Kiểm tra xem tất cả các variant groups đã chọn có khớp với backend variant không
+      return product.variants.every((frontendVariantGroup) => {
+        const selectedValue = selectedVariants[frontendVariantGroup.label]
+        
+        // Nếu không có giá trị nào được chọn cho variant group này, bỏ qua
+        if (!selectedValue) {
+          return true // Không cần khớp nếu chưa chọn
+        }
+        
+        // Tìm key trong backend attributes tương ứng với frontend variant label
+        // So sánh không phân biệt hoa thường và có thể khớp một phần
+        const matchingKey = Object.keys(backendAttrs).find((backendKey) => {
+          const backendKeyLower = backendKey.toLowerCase()
+          const frontendLabelLower = frontendVariantGroup.label.toLowerCase()
+          
+          // Kiểm tra khớp trực tiếp hoặc khớp một phần
+          return backendKeyLower === frontendLabelLower ||
+                 backendKeyLower.includes(frontendLabelLower) ||
+                 frontendLabelLower.includes(backendKeyLower) ||
+                 // Kiểm tra các từ khóa thông dụng
+                 (frontendLabelLower.includes('màu') && (backendKeyLower.includes('color') || backendKeyLower.includes('màu'))) ||
+                 (frontendLabelLower.includes('color') && (backendKeyLower.includes('color') || backendKeyLower.includes('màu'))) ||
+                 (frontendLabelLower.includes('dung lượng') && (backendKeyLower.includes('capacity') || backendKeyLower.includes('storage') || backendKeyLower.includes('dung'))) ||
+                 (frontendLabelLower.includes('kích cỡ') && (backendKeyLower.includes('size') || backendKeyLower.includes('cỡ'))) ||
+                 (frontendLabelLower.includes('loại') && (backendKeyLower.includes('type') || backendKeyLower.includes('loại')))
+        })
+        
+        if (!matchingKey) {
+          return false // Không tìm thấy key tương ứng
+        }
+        
+        // So sánh giá trị (không phân biệt hoa thường và trim)
+        const backendValue = String(backendAttrs[matchingKey] || '').trim().toLowerCase()
+        const selectedValueNormalized = String(selectedValue).trim().toLowerCase()
+        
+        return backendValue === selectedValueNormalized
+      })
     })
 
     // Trả về variant đã tìm thấy hoặc variant đầu tiên làm mặc định

@@ -33,11 +33,20 @@ const Orders = () => {
         return
       }
       try {
-        const data = await getOrderHistory(token)
-        setOrders(data || [])
-      } catch (err) {
-        if (err.message?.includes("404")) {
+        const response = await getOrderHistory(token)
+        // Backend có thể trả về array trực tiếp hoặc object với data field
+        if (Array.isArray(response)) {
+          setOrders(response)
+        } else if (response?.data) {
+          setOrders(response.data)
+        } else {
           setOrders([])
+        }
+      } catch (err) {
+        console.error("Error fetching orders:", err)
+        if (err.message?.includes("404") || err.message?.includes("401")) {
+          setOrders([])
+          setError(null) // Không hiển thị lỗi nếu chỉ là chưa đăng nhập hoặc không có đơn hàng
         } else {
           setError(err.message || "Không thể tải đơn hàng")
         }
@@ -107,7 +116,17 @@ const Orders = () => {
                             )}
                             <div className="item-info">
                               <span className="item-name">{item.product_name}</span>
-                              {item.variant && <span className="item-variant">{item.variant}</span>}
+                              {item.variant && (
+                                <span className="item-variant">
+                                  {typeof item.variant === 'object' 
+                                    ? Object.entries(item.variant)
+                                        .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '')
+                                        .map(([key, value]) => `${key}: ${value}`)
+                                        .join(', ')
+                                    : item.variant
+                                  }
+                                </span>
+                              )}
                               <span className="item-qty">x{item.quantity}</span>
                             </div>
                             <span className="item-price">{formatPrice(item.price)}</span>
@@ -120,9 +139,11 @@ const Orders = () => {
                           <span className={`status-badge ${order.order_status}`}>
                             {getStatusLabel(order.order_status)}
                           </span>
-                          <span className={`status-badge ${order.payment_method?.toLowerCase()}`}>
-                            {order.payment_method}
-                          </span>
+                          {order.payment_method && order.payment_method !== "Unknown" && (
+                            <span className={`status-badge ${order.payment_method?.toLowerCase()}`}>
+                              {order.payment_method}
+                            </span>
+                          )}
                         </div>
                         <div className="order-total">
                           Tổng: <strong>{formatPrice(order.total_price)}</strong>

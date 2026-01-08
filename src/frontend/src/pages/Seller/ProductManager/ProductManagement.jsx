@@ -31,7 +31,8 @@ const ProductManagement = () => {
       {
         price: "",
         quantity: "",
-        attributes: { color: "", type: "" },
+        attributes: [],
+        newAttributeKey: "",
       },
     ]),
   })
@@ -39,7 +40,8 @@ const ProductManagement = () => {
     {
       price: "",
       quantity: "",
-      attributes: { color: "", type: "" },
+      attributes: [], // Mảng các thuộc tính: [{ key: "Màu sắc", value: "Đỏ" }, ...]
+      newAttributeKey: "", // Tên thuộc tính mới đang nhập
     },
   ])
   const [currentImages, setCurrentImages] = useState([])
@@ -163,16 +165,29 @@ const ProductManagement = () => {
       // Set variants from product detail
       const productVariants = productDetail.variants || []
       if (productVariants.length > 0) {
-        setVariants(productVariants.map(v => ({
-          price: v.price ? v.price.toString() : "",
-          quantity: v.quantity ? v.quantity.toString() : "",
-          attributes: v.attributes || { color: "", type: "" },
-        })))
+        setVariants(productVariants.map(v => {
+          // Convert attributes object thành mảng
+          const attrsArray = []
+          if (v.attributes && typeof v.attributes === 'object') {
+            Object.keys(v.attributes).forEach(key => {
+              if (v.attributes[key]) {
+                attrsArray.push({ key: key, value: v.attributes[key] })
+              }
+            })
+          }
+          return {
+            price: v.price ? v.price.toString() : "",
+            quantity: v.quantity ? v.quantity.toString() : "",
+            attributes: attrsArray,
+            newAttributeKey: "",
+          }
+        }))
       } else {
         setVariants([{
           price: "",
           quantity: "",
-          attributes: { color: "", type: "" },
+          attributes: [],
+          newAttributeKey: "",
         }])
       }
 
@@ -234,14 +249,21 @@ const ProductManagement = () => {
       }
 
       // Convert variants to proper format with numeric values
-      const formattedVariants = variants.map((v) => ({
-        price: Number.parseInt(v.price) || 0,
-        quantity: Number.parseInt(v.quantity) || 0,
-        attributes: {
-          color: v.attributes.color || "",
-          type: v.attributes.type || "",
-        },
-      }))
+      const formattedVariants = variants.map((v) => {
+        // Convert attributes array thành object
+        const attributesObj = {}
+        v.attributes.forEach(attr => {
+          if (attr.key && attr.value && String(attr.key).trim() && String(attr.value).trim()) {
+            attributesObj[String(attr.key).trim()] = String(attr.value).trim()
+          }
+        })
+        
+        return {
+          price: Number.parseInt(v.price) || 0,
+          quantity: Number.parseInt(v.quantity) || 0,
+          attributes: attributesObj,
+        }
+      })
 
       formData.append("variants_input", JSON.stringify(formattedVariants))
 
@@ -289,7 +311,8 @@ const ProductManagement = () => {
       {
         price: "",
         quantity: "",
-        attributes: { color: "", type: "" },
+        attributes: [],
+        newAttributeKey: "",
       },
     ])
   }
@@ -315,7 +338,8 @@ const ProductManagement = () => {
         {
           price: "",
           quantity: "",
-          attributes: { color: "", type: "" },
+          attributes: [],
+          newAttributeKey: "",
         },
       ]),
     })
@@ -323,7 +347,8 @@ const ProductManagement = () => {
       {
         price: "",
         quantity: "",
-        attributes: { color: "", type: "" },
+        attributes: [],
+        newAttributeKey: "",
       },
     ])
   }
@@ -335,20 +360,9 @@ const ProductManagement = () => {
 
   const handleVariantChange = (index, field, value) => {
     const updatedVariants = [...variants]
-    if (field.includes(".")) {
-      const [parent, child] = field.split(".")
-      updatedVariants[index] = {
-        ...updatedVariants[index],
-        [parent]: {
-          ...updatedVariants[index][parent],
-          [child]: value,
-        },
-      }
-    } else {
-      updatedVariants[index] = {
-        ...updatedVariants[index],
-        [field]: value,
-      }
+    updatedVariants[index] = {
+      ...updatedVariants[index],
+      [field]: value,
     }
     setVariants(updatedVariants)
     setProductForm({
@@ -357,13 +371,72 @@ const ProductManagement = () => {
     })
   }
 
+  const addAttribute = (variantIndex) => {
+    const updatedVariants = [...variants]
+    const newKey = updatedVariants[variantIndex].newAttributeKey?.trim()
+    if (!newKey) {
+      alert("Vui lòng nhập tên thuộc tính")
+      return
+    }
+    
+    // Cho phép trùng tên thuộc tính (ví dụ: nhiều "Màu sắc" với giá trị khác nhau)
+    if (!updatedVariants[variantIndex].attributes) {
+      updatedVariants[variantIndex].attributes = []
+    }
+    updatedVariants[variantIndex].attributes.push({ key: newKey, value: "" })
+    updatedVariants[variantIndex].newAttributeKey = "" // Reset input
+    setVariants(updatedVariants)
+    setProductForm({
+      ...productForm,
+      variants_input: JSON.stringify(updatedVariants.map(v => ({
+        price: v.price,
+        quantity: v.quantity,
+        attributes: v.attributes
+      }))),
+    })
+  }
+
+  const removeAttribute = (variantIndex, attrIndex) => {
+    const updatedVariants = [...variants]
+    updatedVariants[variantIndex].attributes = updatedVariants[variantIndex].attributes.filter((_, i) => i !== attrIndex)
+    setVariants(updatedVariants)
+    setProductForm({
+      ...productForm,
+      variants_input: JSON.stringify(updatedVariants),
+    })
+  }
+
+  const handleAttributeChange = (variantIndex, attrIndex, field, value) => {
+    const updatedVariants = [...variants]
+    updatedVariants[variantIndex].attributes[attrIndex] = {
+      ...updatedVariants[variantIndex].attributes[attrIndex],
+      [field]: value,
+    }
+    setVariants(updatedVariants)
+    setProductForm({
+      ...productForm,
+      variants_input: JSON.stringify(updatedVariants.map(v => ({
+        price: v.price,
+        quantity: v.quantity,
+        attributes: v.attributes
+      }))),
+    })
+  }
+
+  const handleNewAttributeKeyChange = (variantIndex, value) => {
+    const updatedVariants = [...variants]
+    updatedVariants[variantIndex].newAttributeKey = value
+    setVariants(updatedVariants)
+  }
+
   const addVariant = () => {
     setVariants([
       ...variants,
       {
         price: "",
         quantity: "",
-        attributes: { color: "", type: "" },
+        attributes: [],
+        newAttributeKey: "",
       },
     ])
   }
@@ -435,20 +508,15 @@ const ProductManagement = () => {
           throw new Error(`Số lượng của biến thể phải là số lớn hơn 0`)
         }
         
-        // Build attributes object - chỉ thêm key nếu có giá trị (không rỗng)
+        // Convert attributes array thành object
         const attributes = {}
-        if (v.attributes?.color && String(v.attributes.color).trim()) {
-          attributes.color = String(v.attributes.color).trim()
+        if (Array.isArray(v.attributes)) {
+          v.attributes.forEach(attr => {
+            if (attr.key && attr.value && String(attr.key).trim() && String(attr.value).trim()) {
+              attributes[String(attr.key).trim()] = String(attr.value).trim()
+            }
+          })
         }
-        if (v.attributes?.type && String(v.attributes.type).trim()) {
-          attributes.type = String(v.attributes.type).trim()
-        }
-        // Nếu có các attributes khác (size, loại, etc.)
-        Object.keys(v.attributes || {}).forEach(key => {
-          if (key !== 'color' && key !== 'type' && v.attributes[key] && String(v.attributes[key]).trim()) {
-            attributes[key] = String(v.attributes[key]).trim()
-          }
-        })
         
         return {
           price: price,
@@ -778,7 +846,7 @@ const ProductManagement = () => {
                           </button>
                         )}
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "15px" }}>
                         <div>
                           <label style={{ fontSize: "12px" }}>Giá (đ) *</label>
                           <input
@@ -799,26 +867,104 @@ const ProductManagement = () => {
                             style={{ width: "100%" }}
                           />
                         </div>
-                        <div>
-                          <label style={{ fontSize: "12px" }}>Màu sắc</label>
-                          <input
-                            type="text"
-                            value={variant.attributes.color}
-                            onChange={(e) => handleVariantChange(index, "attributes.color", e.target.value)}
-                            placeholder="Màu sắc"
-                            style={{ width: "100%" }}
-                          />
+                      </div>
+                      
+                      <div style={{ borderTop: "1px solid #ddd", paddingTop: "15px", marginTop: "15px" }}>
+                        <label style={{ fontSize: "14px", fontWeight: "500", display: "block", marginBottom: "10px" }}>Thuộc Tính</label>
+                        
+                        {/* Input để thêm thuộc tính mới */}
+                        <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
+                          <div style={{ flex: 1 }}>
+                            <input
+                              type="text"
+                              value={variant.newAttributeKey || ""}
+                              onChange={(e) => handleNewAttributeKeyChange(index, e.target.value)}
+                              placeholder="vd: Màu sắc, Kích cỡ, Vật liệu"
+                              style={{ width: "100%", padding: "8px", fontSize: "12px" }}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  addAttribute(index)
+                                }
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => addAttribute(index)}
+                            style={{
+                              padding: "8px 16px",
+                              fontSize: "12px",
+                              backgroundColor: "#000",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              whiteSpace: "nowrap"
+                            }}
+                          >
+                            + Thêm
+                          </button>
                         </div>
-                        <div>
-                          <label style={{ fontSize: "12px" }}>Loại</label>
-                          <input
-                            type="text"
-                            value={variant.attributes.type}
-                            onChange={(e) => handleVariantChange(index, "attributes.type", e.target.value)}
-                            placeholder="Loại"
-                            style={{ width: "100%" }}
-                          />
-                        </div>
+                        
+                        {/* Danh sách thuộc tính đã thêm */}
+                        {(!variant.attributes || variant.attributes.length === 0) ? (
+                          <div style={{ fontSize: "12px", color: "#999", fontStyle: "italic" }}>
+                            Chưa có thuộc tính nào. Thêm thuộc tính đầu tiên ở trên.
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ fontSize: "12px", color: "#666", marginBottom: "10px", fontWeight: "500" }}>
+                              Các thuộc tính đã thêm:
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                              {variant.attributes.map((attr, attrIndex) => (
+                                <div key={attrIndex} style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                  <div style={{ 
+                                    minWidth: "120px", 
+                                    padding: "8px 12px", 
+                                    backgroundColor: "#333", 
+                                    borderRadius: "4px",
+                                    fontSize: "12px",
+                                    fontWeight: "500",
+                                    color: "#fff"
+                                  }}>
+                                    {attr.key}
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <input
+                                      type="text"
+                                      value={attr.value}
+                                      onChange={(e) => handleAttributeChange(index, attrIndex, "value", e.target.value)}
+                                      placeholder={`Nhập giá trị ${attr.key.toLowerCase()}`}
+                                      style={{ width: "100%", padding: "8px", fontSize: "12px" }}
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeAttribute(index, attrIndex)}
+                                    style={{
+                                      padding: "8px",
+                                      backgroundColor: "transparent",
+                                      color: "#dc3545",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      fontSize: "16px",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      width: "32px",
+                                      height: "32px"
+                                    }}
+                                    title="Xóa thuộc tính"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -923,7 +1069,7 @@ const ProductManagement = () => {
                       </button>
                     )}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "15px" }}>
                     <div>
                       <label style={{ fontSize: "12px" }}>Giá (đ) *</label>
                       <input
@@ -944,26 +1090,104 @@ const ProductManagement = () => {
                         style={{ width: "100%" }}
                       />
                     </div>
-                    <div>
-                      <label style={{ fontSize: "12px" }}>Màu sắc</label>
-                      <input
-                        type="text"
-                        value={variant.attributes.color}
-                        onChange={(e) => handleVariantChange(index, "attributes.color", e.target.value)}
-                        placeholder="Màu sắc"
-                        style={{ width: "100%" }}
-                      />
+                  </div>
+                  
+                  <div style={{ borderTop: "1px solid #ddd", paddingTop: "15px", marginTop: "15px" }}>
+                    <label style={{ fontSize: "14px", fontWeight: "500", display: "block", marginBottom: "10px" }}>Thuộc Tính</label>
+                    
+                    {/* Input để thêm thuộc tính mới */}
+                    <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
+                      <div style={{ flex: 1 }}>
+                        <input
+                          type="text"
+                          value={variant.newAttributeKey || ""}
+                          onChange={(e) => handleNewAttributeKeyChange(index, e.target.value)}
+                          placeholder="vd: Màu sắc, Kích cỡ, Vật liệu"
+                          style={{ width: "100%", padding: "8px", fontSize: "12px" }}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              addAttribute(index)
+                            }
+                          }}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addAttribute(index)}
+                        style={{
+                          padding: "8px 16px",
+                          fontSize: "12px",
+                          backgroundColor: "#000",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        + Thêm
+                      </button>
                     </div>
-                    <div>
-                      <label style={{ fontSize: "12px" }}>Loại</label>
-                      <input
-                        type="text"
-                        value={variant.attributes.type}
-                        onChange={(e) => handleVariantChange(index, "attributes.type", e.target.value)}
-                        placeholder="Loại"
-                        style={{ width: "100%" }}
-                      />
-                    </div>
+                    
+                    {/* Danh sách thuộc tính đã thêm */}
+                    {(!variant.attributes || variant.attributes.length === 0) ? (
+                      <div style={{ fontSize: "12px", color: "#999", fontStyle: "italic" }}>
+                        Chưa có thuộc tính nào. Thêm thuộc tính đầu tiên ở trên.
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ fontSize: "12px", color: "##666", marginBottom: "10px", fontWeight: "500" }}>
+                          Các thuộc tính đã thêm:
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                          {variant.attributes.map((attr, attrIndex) => (
+                            <div key={attrIndex} style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                              <div style={{ 
+                                minWidth: "120px", 
+                                padding: "8px 12px", 
+                                backgroundColor: "#333", 
+                                borderRadius: "4px",
+                                fontSize: "12px",
+                                fontWeight: "500",
+                                color: "#fff"
+                              }}>
+                                {attr.key}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <input
+                                  type="text"
+                                  value={attr.value}
+                                  onChange={(e) => handleAttributeChange(index, attrIndex, "value", e.target.value)}
+                                  placeholder={`Nhập giá trị ${attr.key.toLowerCase()}`}
+                                  style={{ width: "100%", padding: "8px", fontSize: "12px" }}
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeAttribute(index, attrIndex)}
+                                style={{
+                                  padding: "8px",
+                                  backgroundColor: "transparent",
+                                  color: "#dc3545",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  fontSize: "16px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  width: "32px",
+                                  height: "32px"
+                                }}
+                                title="Xóa thuộc tính"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

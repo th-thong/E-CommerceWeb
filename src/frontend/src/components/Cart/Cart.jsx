@@ -102,14 +102,14 @@ const Cart = ({ isOpen, onClose }) => {
                         if (entries.length === 0) return null
 
                         return (
-                          <div className="cart-item-variant">
+                        <div className="cart-item-variant">
                             {entries.map(([key, value]) => (
                               <span key={key}>
                                 {key}: {value}
                               </span>
                             ))}
                           </div>
-                        )
+                            )
                       })()}
 
                       {/* Giá */}

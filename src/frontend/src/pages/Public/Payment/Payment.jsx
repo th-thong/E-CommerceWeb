@@ -1,13 +1,19 @@
 import { useMemo, useState } from "react"
 import { useCart } from "@/contexts/CartContext"
+import { createOrder } from "@/api/orders"
+import { confirmCOD } from "@/api/payment"
+import { useNavigate, Link } from "react-router-dom"
 import "./Payment.css"
 
 const SHIPPING_FEE = 30000
 
 const formatCurrency = (v) => v.toLocaleString("vi-VN") + "đ"
 
+const TOKEN_KEY = "auth_tokens"
+
 export default function Payment() {
-  const { cartItems, getTotalPrice } = useCart()
+  const { cartItems, getTotalPrice, clearCart } = useCart()
+  const navigate = useNavigate()
 
   const [paymentMethod, setPaymentMethod] = useState("cod")
   const [name, setName] = useState("")
@@ -19,6 +25,19 @@ export default function Payment() {
   const [note, setNote] = useState("")
   const [status, setStatus] = useState(null) // { type: 'success' | 'error', message: string }
   const [isPaying, setIsPaying] = useState(false)
+
+  const getToken = () => {
+    const saved = localStorage.getItem(TOKEN_KEY)
+    if (saved) {
+      try {
+        const tokens = JSON.parse(saved)
+        return tokens.access
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
 
   const calculateItemPrice = (item) => {
     const price = item.variant?.price || item.product.base_price
@@ -47,13 +66,61 @@ export default function Payment() {
       setStatus({ type: "error", message: err })
       return
     }
+
+    const token = getToken()
+    if (!token) {
+      setStatus({ type: "error", message: "Vui lòng đăng nhập để thanh toán" })
+      return
+    }
+
     setIsPaying(true)
     setStatus(null)
-    // Giả lập gọi gateway; thực tế sẽ redirect hoặc open popup
-    await new Promise((r) => setTimeout(r, 1200))
-    setIsPaying(false)
-    // Giả lập thành công
-    setStatus({ type: "success", message: "Thanh toán thành công. Đơn hàng đã chuyển sang trạng thái 'Đã thanh toán'." })
+
+    try {
+      // 1. Tạo đơn hàng với items từ cart
+      const orderItems = cartItems.map(item => ({
+        product_id: item.product.product_id || item.product.id,
+        variant_id: item.variant?.variant_id || item.variant?.id || null,
+        quantity: item.quantity
+      }))
+
+      const orderData = {
+        items: orderItems,
+        payment_type: paymentMethod === "cod" ? "COD" : "VNPAY"
+      }
+
+      const orderResponse = await createOrder(orderData, token)
+      const orderId = orderResponse.order_id
+
+      // 2. Nếu là COD, xác nhận thanh toán COD
+      if (paymentMethod === "cod") {
+        await confirmCOD(orderId, token)
+        
+        // Xóa giỏ hàng sau khi thanh toán thành công
+        clearCart()
+        
+        setStatus({ 
+          type: "success", 
+          message: "Thanh toán thành công. Đơn hàng đã chuyển sang trạng thái 'Chờ xác nhận'." 
+        })
+      } else {
+        // VNPAY - redirect đến payment URL
+        if (orderResponse.payment_url) {
+          window.location.href = orderResponse.payment_url
+          return
+        } else {
+          setStatus({ type: "error", message: "Không thể lấy URL thanh toán" })
+        }
+      }
+    } catch (error) {
+      console.error("Payment error:", error)
+      setStatus({ 
+        type: "error", 
+        message: error.message || "Thanh toán thất bại. Vui lòng thử lại." 
+      })
+    } finally {
+      setIsPaying(false)
+    }
   }
 
   const handleCancelPayment = () => {
@@ -62,7 +129,34 @@ export default function Payment() {
 
   return (
     <div className="payment-page">
-      <h1 style={{ marginBottom: 16 }}>Thanh toán đơn hàng</h1>
+      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: 16 }}>
+        <Link 
+          to="/" 
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            color: "#fff",
+            textDecoration: "none",
+            borderRadius: "8px",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            transition: "all 0.3s",
+            fontSize: "14px",
+            fontWeight: "500",
+            whiteSpace: "nowrap"
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.2)"
+            e.target.style.borderColor = "rgba(255, 255, 255, 0.3)"
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)"
+            e.target.style.borderColor = "rgba(255, 255, 255, 0.2)"
+          }}
+        >
+          ← Quay về trang chủ
+        </Link>
+        <h1 style={{ margin: 0 }}>Thanh toán đơn hàng</h1>
+      </div>
       <div className="payment-grid">
         <div className="card">
           <h2>Thông tin người nhận</h2>

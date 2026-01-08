@@ -221,7 +221,7 @@ export const CartProvider = ({ children }) => {
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('authTokensChanged', handleAuthChange);
-    
+
     // Gọi reloadCartFromStorage khi component mount để đảm bảo cart được load đúng
     // (đặc biệt quan trọng khi đăng nhập lại)
     reloadCartFromStorage();

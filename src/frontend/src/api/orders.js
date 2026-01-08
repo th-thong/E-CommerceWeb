@@ -1,9 +1,15 @@
-import { get } from './client';
+import { get, post } from './client';
 
 // User - lấy lịch sử mua hàng
 // GET /api/orders/
 export function getOrderHistory(token) {
   return get('/orders/', token);
+}
+
+// User - tạo đơn hàng mới
+// POST /api/orders/
+export function createOrder(orderData, token) {
+  return post('/orders/', orderData, token);
 }
 
 // Seller - orders for current shop

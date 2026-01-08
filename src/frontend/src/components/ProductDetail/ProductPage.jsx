@@ -11,6 +11,11 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // Tự động scroll về đầu trang khi vào trang chi tiết sản phẩm
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [productId])
+
   useEffect(() => {
     // Reset state khi productId thay đổi
     setLoading(true)
