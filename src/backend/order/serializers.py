@@ -10,18 +10,6 @@ from decimal import Decimal
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
 
-#chỉ lấy các field trong bảng order không lấy detail 
-class OrderSimpleSerializer(serializers.ModelSerializer):
-    order_status = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Order
-        fields = ["id", "user", "total_price", "created_at", "order_status"]
-        depth = 0
-
-    def get_order_status(self, obj):
-        first_item = obj.items.first()
-        return first_item.order_status if first_item else "pending"
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,7 +21,7 @@ class OrderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ["id", "user", "total_price", "created_at", "items"]
+        fields = ["id", "user", "total_price", "created_at", "items", "full_name", "phone_number", "address", "note"]
 
 class NewOrderDetailSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
@@ -58,7 +46,7 @@ class NewOrderSerializer(serializers.ModelSerializer):
     payment_type = serializers.ChoiceField(choices=[('COD', 'COD'), ('VNPAY', 'VNPAY')], default='COD')
     class Meta:
         model = Order
-        fields = ["items", "payment_type"]
+        fields = ["items", "payment_type", "full_name", "phone_number", "address", "note"]
 
     def create(self, validated_data):
         request = self.context.get("request")
@@ -75,10 +63,19 @@ class NewOrderSerializer(serializers.ModelSerializer):
         payment_type = validated_data.get('payment_type', 'COD')
         items_data = validated_data.get('items')
 
+        full_name = validated_data.get('full_name')
+        phone_number = validated_data.get('phone_number')
+        address = validated_data.get('address')
+        note = validated_data.get('note')
+
         # 1. Tạo Order cha
         order = Order.objects.create(
             user=request.user,
-            total_price=0
+            total_price=0,
+            full_name=full_name,
+            phone_number=phone_number,
+            address=address,
+            note=note,
         )
 
         # 2. Tạo Order Detail
@@ -143,9 +140,15 @@ class ShopOrderDetailSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source='order.user.username', read_only=True)
     customer_email = serializers.EmailField(source='order.user.email', read_only=True)
     
+    full_name = serializers.CharField(source='order.full_name', read_only=True)
+    phone_number = serializers.CharField(source='order.phone_number', read_only=True)
+    address = serializers.CharField(source='order.address', read_only=True)
+    note = serializers.CharField(source='order.note', read_only=True)
+    
     # 2. Thông tin từ bảng Product (Sản phẩm)
     product_name = serializers.CharField(source='product.product_name', read_only=True)
     product_image = serializers.SerializerMethodField()
+    
 
     # 3. Thông tin từ bảng Variant (Phân loại hàng)
     variant = serializers.SerializerMethodField()
@@ -157,13 +160,10 @@ class ShopOrderDetailSerializer(serializers.ModelSerializer):
         model = OrderDetail
         fields = [
             'id', 
-            # Info đơn hàng
             'order_id', 'created_at', 'customer_name', 'customer_email',
-            # Info sản phẩm
+            'full_name', 'phone_number', 'address', 'note',
             'product', 'product_name', 'product_image', 'variant',
-            # Info giao dịch
             'quantity', 'price', 'subtotal',
-            # Trạng thái
             'order_status', 'payment_status', 'payment_type'
         ]
 
@@ -213,12 +213,14 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderHistorySerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     payment_method = serializers.SerializerMethodField()
-    order_status = serializers.SerializerMethodField() # Thêm field này
+    order_status = serializers.SerializerMethodField()
     total_price = serializers.CharField() 
 
     class Meta:
         model = Order
-        fields = ['id', 'total_price', 'created_at', 'payment_method', 'order_status', 'items']
+        fields = ['id', 'total_price', 'created_at',
+                  'payment_method', 'order_status', 'items',
+                  "full_name", "phone_number", "address", "note"]
 
     @extend_schema_field(OpenApiTypes.STR)
     def get_payment_method(self, obj):
