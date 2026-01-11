@@ -111,47 +111,50 @@ export default function Payment() {
     setStatus(null)
 
     try {
-      // 1. Tạo đơn hàng với items từ cart
+      // 1. Chuẩn bị items theo format Serializer mong đợi
       const orderItems = cartItems.map(item => ({
         product_id: item.product.product_id || item.product.id,
         variant_id: item.variant?.variant_id || item.variant?.id || null,
         quantity: item.quantity
       }))
 
+      // 2. Tạo đối tượng orderData chứa ĐẦY ĐỦ thông tin Serializer yêu cầu
       const orderData = {
         items: orderItems,
-        payment_type: paymentMethod === "cod" ? "COD" : "VNPAY"
+        payment_type: paymentMethod === "cod" ? "COD" : "VNPAY",
+        full_name: name,
+        phone_number: phone,
+        address: address,
+        note: note
       }
 
       const orderResponse = await createOrder(orderData, token)
-      const orderId = orderResponse.order_id
+      
+      const orderId = orderResponse.id || orderResponse.order_id
 
-      // 2. Nếu là COD, xác nhận thanh toán COD
+      // 3. Xử lý sau khi tạo đơn hàng
       if (paymentMethod === "cod") {
         await confirmCOD(orderId, token)
-        
-        // Xóa giỏ hàng sau khi thanh toán thành công
         clearCart()
-        
         setStatus({ 
           type: "success", 
-          message: "Thanh toán thành công. Đơn hàng đã chuyển sang trạng thái 'Chờ xác nhận'." 
+          message: "Đặt hàng thành công! Đơn hàng đang chờ xác nhận." 
         })
+        // Có thể navigate sang trang đơn hàng sau 2s
+        setTimeout(() => navigate("/orders"), 2000)
       } else {
         // VNPAY - redirect đến payment URL
         if (orderResponse.payment_url) {
           window.location.href = orderResponse.payment_url
-          return
         } else {
-          setStatus({ type: "error", message: "Không thể lấy URL thanh toán" })
+          setStatus({ type: "error", message: "Không thể khởi tạo cổng thanh toán VNPAY" })
         }
       }
     } catch (error) {
       console.error("Payment error:", error)
-      setStatus({ 
-        type: "error", 
-        message: error.message || "Thanh toán thất bại. Vui lòng thử lại." 
-      })
+      // Hiển thị lỗi từ backend (ví dụ: hết hàng)
+      const errorMsg = error.response?.data?.detail || error.message || "Thanh toán thất bại."
+      setStatus({ type: "error", message: errorMsg })
     } finally {
       setIsPaying(false)
     }

@@ -58,7 +58,7 @@ class NewOrderSerializer(serializers.ModelSerializer):
     payment_type = serializers.ChoiceField(choices=[('COD', 'COD'), ('VNPAY', 'VNPAY')], default='COD')
     class Meta:
         model = Order
-        fields = ["items", "payment_type"]
+        fields = ["items", "payment_type", "full_name", "phone_number", "address", "note"]
 
     def create(self, validated_data):
         request = self.context.get("request")
@@ -75,10 +75,19 @@ class NewOrderSerializer(serializers.ModelSerializer):
         payment_type = validated_data.get('payment_type', 'COD')
         items_data = validated_data.get('items')
 
+        full_name = validated_data.get('full_name')
+        phone_number = validated_data.get('phone_number')
+        address = validated_data.get('address')
+        note = validated_data.get('note')
+
         # 1. Tạo Order cha
         order = Order.objects.create(
             user=request.user,
-            total_price=0
+            total_price=0,
+            full_name=full_name,
+            phone_number=phone_number,
+            address=address,
+            note=note,
         )
 
         # 2. Tạo Order Detail
@@ -218,7 +227,9 @@ class OrderHistorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'total_price', 'created_at', 'payment_method', 'order_status', 'items']
+        fields = ['id', 'total_price', 'created_at',
+                  'payment_method', 'order_status', 'items',
+                  "full_name", "phone_number", "address", "note"]
 
     @extend_schema_field(OpenApiTypes.STR)
     def get_payment_method(self, obj):
