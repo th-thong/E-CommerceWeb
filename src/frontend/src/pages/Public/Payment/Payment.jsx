@@ -2,10 +2,9 @@ import { useMemo, useState } from "react"
 import { useCart } from "@/contexts/CartContext"
 import { createOrder } from "@/api/orders"
 import { confirmCOD } from "@/api/payment"
+import { getProfile } from "@/api/auth"
 import { useNavigate, Link } from "react-router-dom"
 import "./Payment.css"
-
-const SHIPPING_FEE = 30000
 
 const formatCurrency = (v) => v.toLocaleString("vi-VN") + "đ"
 
@@ -25,6 +24,7 @@ export default function Payment() {
   const [note, setNote] = useState("")
   const [status, setStatus] = useState(null) // { type: 'success' | 'error', message: string }
   const [isPaying, setIsPaying] = useState(false)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false)
 
   const getToken = () => {
     const saved = localStorage.getItem(TOKEN_KEY)
@@ -39,6 +39,44 @@ export default function Payment() {
     return null
   }
 
+  // Xử lý khi nhấn nút "Sử dụng thông tin từ tài khoản"
+  const handleFillFromAccount = async () => {
+    const token = getToken()
+    if (!token) {
+      setStatus({ type: "error", message: "Vui lòng đăng nhập để sử dụng tính năng này" })
+      return
+    }
+
+    setIsLoadingProfile(true)
+    setStatus(null)
+
+    try {
+      const profile = await getProfile(token)
+      
+      // Chỉ fill phone và address, không fill name
+      // Fill phone nếu có (ưu tiên phone_number, sau đó shop_phone_number)
+      if (profile.phone_number) {
+        setPhone(profile.phone_number)
+      } else if (profile.shop_phone_number) {
+        setPhone(profile.shop_phone_number)
+      }
+      
+      // Fill address nếu có (ưu tiên address, sau đó shop_address)
+      if (profile.address && profile.address !== "None") {
+        setAddress(profile.address)
+      } else if (profile.shop_address) {
+        setAddress(profile.shop_address)
+      }
+
+      setStatus({ type: "success", message: "Đã điền thông tin từ tài khoản" })
+    } catch (error) {
+      console.error("Error loading profile:", error)
+      setStatus({ type: "error", message: "Không thể tải thông tin từ tài khoản. Vui lòng thử lại." })
+    } finally {
+      setIsLoadingProfile(false)
+    }
+  }
+
   const calculateItemPrice = (item) => {
     const price = item.variant?.price || item.product.base_price
     const discount = item.product.discount || 0
@@ -47,16 +85,12 @@ export default function Payment() {
 
   const totals = useMemo(() => {
     const subtotal = getTotalPrice()
-    return { subtotal, total: subtotal + SHIPPING_FEE }
+    return { subtotal, total: subtotal }
   }, [cartItems, getTotalPrice])
 
   const validate = () => {
     if (!cartItems || cartItems.length === 0) return "Giỏ hàng đang trống, không thể thanh toán."
-    if (!name.trim() || !phone.trim() || !address.trim()) return "Vui lòng điền đủ họ tên, SĐT, địa chỉ."
-    if (paymentMethod === "card") {
-      if (!cardNumber.trim() || !exp.trim() || !cvv.trim()) return "Vui lòng nhập đủ thông tin thẻ."
-      if (cvv.length < 3 || cvv.length > 4) return "CVV không hợp lệ."
-    }
+    if (!name.trim() || !phone.trim() || !address.trim()) return "Vui lòng điền đủ họ và tên người nhận, SĐT, địa chỉ."
     return null
   }
 
@@ -129,7 +163,7 @@ export default function Payment() {
 
   return (
     <div className="payment-page">
-      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
         <Link 
           to="/" 
           style={{
@@ -142,7 +176,8 @@ export default function Payment() {
             transition: "all 0.3s",
             fontSize: "14px",
             fontWeight: "500",
-            whiteSpace: "nowrap"
+            whiteSpace: "nowrap",
+            flexShrink: 0
           }}
           onMouseEnter={(e) => {
             e.target.style.backgroundColor = "rgba(255, 255, 255, 0.2)"
@@ -160,9 +195,34 @@ export default function Payment() {
       <div className="payment-grid">
         <div className="card">
           <h2>Thông tin người nhận</h2>
+          <div className="fill-account-checkbox">
+            <input
+              type="checkbox"
+              id="fillFromAccount"
+              onChange={async (e) => {
+                if (e.target.checked) {
+                  await handleFillFromAccount()
+                } else {
+                  // Clear phone và address khi bỏ tích (không clear name)
+                  setPhone("")
+                  setAddress("")
+                  setStatus(null)
+                }
+              }}
+              disabled={isLoadingProfile || isPaying}
+            />
+            <label htmlFor="fillFromAccount">
+              Sử dụng thông tin từ tài khoản
+              {isLoadingProfile && <span className="loading-text"> (Đang tải...)</span>}
+            </label>
+          </div>
           <div className="section">
-            <label>Họ tên</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nhập họ tên" />
+            <label>Họ và tên người nhận</label>
+            <input 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              placeholder="Nhập họ và tên người nhận"
+            />
           </div>
           <div className="section">
             <label>Số điện thoại</label>
@@ -195,23 +255,19 @@ export default function Payment() {
                 checked={paymentMethod === "card"}
                 onChange={() => setPaymentMethod("card")}
               />
-              <label htmlFor="card">Thẻ ngân hàng / Thẻ quốc tế</label>
+              <label htmlFor="card">Thanh toán bằng VNPAY</label>
             </div>
           </div>
 
           {paymentMethod === "card" && (
-            <div className="section">
-              <label>Số thẻ</label>
-              <input
-                value={cardNumber}
-                onChange={(e) => setCardNumber(e.target.value)}
-                placeholder="1234 5678 9012 3456"
-              />
-              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                <input value={exp} onChange={(e) => setExp(e.target.value)} placeholder="MM/YY" />
-                <input value={cvv} onChange={(e) => setCvv(e.target.value)} placeholder="CVV" />
+            <div className="vnpay-notice">
+              <div className="vnpay-notice-icon">🔒</div>
+              <div className="vnpay-notice-content">
+                <div className="vnpay-notice-title">Thanh toán an toàn với VNPAY</div>
+                <div className="vnpay-notice-text">
+                  Bạn sẽ được chuyển tới cổng thanh toán VNPAY để xác thực và thanh toán một cách an toàn.
+                </div>
               </div>
-              <p className="info-text">Bạn sẽ được chuyển tới cổng thanh toán để xác thực.</p>
             </div>
           )}
 
@@ -251,10 +307,6 @@ export default function Payment() {
           <div className="summary-row">
             <span>Tạm tính</span>
             <span>{formatCurrency(totals.subtotal)}</span>
-          </div>
-          <div className="summary-row">
-            <span>Phí vận chuyển</span>
-            <span>{formatCurrency(SHIPPING_FEE)}</span>
           </div>
           <div className="summary-row total">
             <span>Tổng thanh toán</span>
