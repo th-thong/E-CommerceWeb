@@ -74,6 +74,7 @@ const SellerDashboard = () => {
 
           return {
             id: index + 1,
+            detailId: item.id, // Lưu detail_id để dùng cho API reject/update
             orderCode: `DH-${item.order_id ?? item.order ?? ""}`,
             customerName: item.customer_name || item.customer_email || "Khách hàng",
             phone: "", // Chưa có field phone trong serializer
@@ -100,6 +101,62 @@ const SellerDashboard = () => {
 
     checkSellerPermission()
   }, [navigate])
+
+  // Hàm reload đơn hàng sau khi cập nhật
+  const reloadOrders = async () => {
+    try {
+      const savedTokens = localStorage.getItem(TOKEN_KEY)
+      const tokens = savedTokens ? JSON.parse(savedTokens) : null
+      const accessToken = tokens?.access || null
+      
+      if (!accessToken) {
+        return
+      }
+
+      const data = await fetchMyShopOrders(accessToken)
+
+      // API trả về danh sách ShopOrderDetail (dữ liệu thật từ backend)
+      const mappedOrders = (data || []).map((item, index) => {
+        // Map trạng thái từ backend sang nhãn tiếng Việt dùng trong UI
+        const backendStatus = (item.order_status || "").toLowerCase()
+        // pending -> Đang chờ, confirmed -> Đang giao, shipped -> Đã giao
+        let displayStatus = "Đang chờ"
+        if (backendStatus === "confirmed") displayStatus = "Đang giao"
+        else if (backendStatus === "shipped") displayStatus = "Đã giao"
+
+        const quantityNumber = item.quantity ?? 0
+        const priceNumber = Number.parseFloat(item.price) || 0
+        const subtotalNumber =
+          item.subtotal !== undefined && item.subtotal !== null
+            ? Number.parseFloat(item.subtotal)
+            : priceNumber * quantityNumber
+
+        return {
+          id: index + 1,
+          detailId: item.id, // Lưu detail_id để dùng cho API reject/update
+          orderCode: `DH-${item.order_id ?? item.order ?? ""}`,
+          customerName: item.customer_name || item.customer_email || "Khách hàng",
+          phone: "", // Chưa có field phone trong serializer
+          address: "", // Chưa có field address trong serializer
+          status: displayStatus,
+          createdAt: item.created_at || "",
+          items: [
+            {
+              id: item.product,
+              name: item.product_name || `Sản phẩm #${item.product}`,
+              quantity: quantityNumber,
+              price: priceNumber,
+            },
+          ],
+          total: subtotalNumber,
+        }
+      })
+
+      setOrders(mappedOrders)
+    } catch (error) {
+      console.error("Failed to reload orders:", error)
+    }
+  }
 
   const handleGoToRegistration = () => {
     setShowPermissionModal(false)
@@ -243,6 +300,7 @@ const SellerDashboard = () => {
         setOrders={setOrders}
         products={products}
         setProducts={setProducts}
+        onOrdersUpdate={reloadOrders}
       />
     </div>
   )

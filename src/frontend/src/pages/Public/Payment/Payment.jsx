@@ -124,8 +124,12 @@ export default function Payment() {
         payment_type: paymentMethod === "cod" ? "COD" : "VNPAY",
         full_name: name,
         phone_number: phone,
-        address: address,
-        note: note
+        address: address
+      }
+      
+      // Ghi chú là tùy chọn, chỉ thêm vào nếu có giá trị
+      if (note && note.trim()) {
+        orderData.note = note.trim()
       }
 
       const orderResponse = await createOrder(orderData, token)

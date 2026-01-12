@@ -24,37 +24,50 @@ const Orders = () => {
     return null
   }
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      const token = getToken()
-      if (!token) {
-        setError("Vui lòng đăng nhập để xem đơn hàng")
-        setLoading(false)
-        return
-      }
-      try {
-        const response = await getOrderHistory(token)
-        // Backend có thể trả về array trực tiếp hoặc object với data field
-        if (Array.isArray(response)) {
-          setOrders(response)
-        } else if (response?.data) {
-          setOrders(response.data)
-        } else {
-          setOrders([])
-        }
-      } catch (err) {
-        console.error("Error fetching orders:", err)
-        if (err.message?.includes("404") || err.message?.includes("401")) {
-          setOrders([])
-          setError(null) // Không hiển thị lỗi nếu chỉ là chưa đăng nhập hoặc không có đơn hàng
-        } else {
-          setError(err.message || "Không thể tải đơn hàng")
-        }
-      } finally {
-        setLoading(false)
-      }
+  const fetchOrders = async () => {
+    const token = getToken()
+    if (!token) {
+      setError("Vui lòng đăng nhập để xem đơn hàng")
+      setLoading(false)
+      return
     }
+    try {
+      const response = await getOrderHistory(token)
+      // Backend có thể trả về array trực tiếp hoặc object với data field
+      if (Array.isArray(response)) {
+        setOrders(response)
+      } else if (response?.data) {
+        setOrders(response.data)
+      } else {
+        setOrders([])
+      }
+    } catch (err) {
+      console.error("Error fetching orders:", err)
+      if (err.message?.includes("404") || err.message?.includes("401")) {
+        setOrders([])
+        setError(null) // Không hiển thị lỗi nếu chỉ là chưa đăng nhập hoặc không có đơn hàng
+      } else {
+        setError(err.message || "Không thể tải đơn hàng")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true)
     fetchOrders()
+    
+    // Refresh dữ liệu khi người dùng quay lại tab (để cập nhật trạng thái mới nhất)
+    const handleFocus = () => {
+      fetchOrders()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   const formatDate = (dateString) => {
@@ -75,8 +88,7 @@ const Orders = () => {
     switch(status) {
       case "pending": return "Chờ xử lý"
       case "confirmed": return "Đã xác nhận"
-      case "shipped": return "Đang giao"
-      case "paid": return "Đã thanh toán"
+      case "shipped": return "Đã giao"
       default: return status
     }
   }
@@ -157,9 +169,7 @@ const Orders = () => {
                       
                       <div className="order-footer">
                         <div className="order-status">
-                          <span className={`status-badge ${order.order_status}`}>
-                            {getStatusLabel(order.order_status)}
-                          </span>
+                          {/* Chỉ hiển thị phương thức thanh toán, không hiển thị trạng thái tổng thể vì đã hiển thị từng item */}
                           {order.payment_method && order.payment_method !== "Unknown" && (
                             <span className={`status-badge ${order.payment_method?.toLowerCase()}`}>
                               {order.payment_method}

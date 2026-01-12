@@ -1,25 +1,142 @@
 "use client"
 
+import { useState } from "react"
+import { rejectOrder, updateOrderStatus } from "@/api/orders"
 import "./section.css"
 
-const OrderManagement = ({ filterStatus, orders = [], setOrders }) => {
+const TOKEN_KEY = "auth_tokens"
 
-  const handleAcceptOrder = (orderId) => {
-    setOrders(
-      orders.map((order) => (order.id === orderId ? { ...order, status: "Đang giao" } : order)),
-    )
+const OrderManagement = ({ filterStatus, orders = [], setOrders, onOrdersUpdate }) => {
+  const [isRejecting, setIsRejecting] = useState({})
+  const [isAccepting, setIsAccepting] = useState({})
+  const [isCompleting, setIsCompleting] = useState({})
+
+  const getToken = () => {
+    const saved = localStorage.getItem(TOKEN_KEY)
+    if (saved) {
+      try {
+        const tokens = JSON.parse(saved)
+        return tokens.access
+      } catch {
+        return null
+      }
+    }
+    return null
   }
 
-  const handleRejectOrder = (orderId) => {
-    if (window.confirm("Bạn có chắc chắn muốn từ chối đơn hàng này?")) {
-      setOrders(orders.filter((order) => order.id !== orderId))
+  const handleAcceptOrder = async (order) => {
+    const token = getToken()
+    if (!token) {
+      alert("Vui lòng đăng nhập lại")
+      return
+    }
+
+    const detailId = order.detailId
+    if (!detailId) {
+      alert("Không tìm thấy thông tin đơn hàng")
+      return
+    }
+
+    setIsAccepting({ [order.id]: true })
+
+    try {
+      // Gọi API để cập nhật trạng thái thành "confirmed" (Đang giao)
+      await updateOrderStatus(detailId, { order_status: "confirmed" }, token)
+      
+      // Cập nhật state local
+      setOrders(
+        orders.map((o) => (o.id === order.id ? { ...o, status: "Đang giao" } : o)),
+      )
+      
+      // Nếu có callback để reload danh sách, gọi nó
+      if (onOrdersUpdate) {
+        onOrdersUpdate()
+      }
+      
+      alert("Đã nhận đơn hàng thành công")
+    } catch (error) {
+      console.error("Error accepting order:", error)
+      alert(error.message || "Không thể nhận đơn hàng. Vui lòng thử lại.")
+    } finally {
+      setIsAccepting({ [order.id]: false })
     }
   }
 
-  const handleCompletePreparation = (orderId) => {
-    setOrders(
-      orders.map((order) => (order.id === orderId ? { ...order, status: "Đã giao" } : order)),
-    )
+  const handleRejectOrder = async (order) => {
+    if (!window.confirm("Bạn có chắc chắn muốn từ chối đơn hàng này? Đơn hàng sẽ bị xóa hoàn toàn.")) {
+      return
+    }
+
+    const token = getToken()
+    if (!token) {
+      alert("Vui lòng đăng nhập lại")
+      return
+    }
+
+    // Lấy detail_id từ order object
+    const detailId = order.detailId
+    if (!detailId) {
+      alert("Không tìm thấy thông tin đơn hàng")
+      return
+    }
+
+    setIsRejecting({ [order.id]: true })
+
+    try {
+      await rejectOrder(detailId, token)
+      // Xóa đơn hàng khỏi danh sách
+      setOrders(orders.filter((o) => o.id !== order.id))
+      
+      // Nếu có callback để reload danh sách, gọi nó để đảm bảo đồng bộ với backend
+      if (onOrdersUpdate) {
+        onOrdersUpdate()
+      }
+      
+      alert("Đã từ chối đơn hàng thành công")
+    } catch (error) {
+      console.error("Error rejecting order:", error)
+      alert(error.message || "Không thể từ chối đơn hàng. Vui lòng thử lại.")
+    } finally {
+      setIsRejecting({ [order.id]: false })
+    }
+  }
+
+  const handleCompletePreparation = async (order) => {
+    const token = getToken()
+    if (!token) {
+      alert("Vui lòng đăng nhập lại")
+      return
+    }
+
+    const detailId = order.detailId
+    if (!detailId) {
+      alert("Không tìm thấy thông tin đơn hàng")
+      return
+    }
+
+    setIsCompleting({ [order.id]: true })
+
+    try {
+      // Gọi API để cập nhật trạng thái thành "shipped" (Đã giao)
+      await updateOrderStatus(detailId, { order_status: "shipped" }, token)
+      
+      // Cập nhật state local
+      setOrders(
+        orders.map((o) => (o.id === order.id ? { ...o, status: "Đã giao" } : o)),
+      )
+      
+      // Nếu có callback để reload danh sách, gọi nó
+      if (onOrdersUpdate) {
+        onOrdersUpdate()
+      }
+      
+      alert("Đã hoàn tất chuẩn bị đơn hàng")
+    } catch (error) {
+      console.error("Error completing order:", error)
+      alert(error.message || "Không thể hoàn tất đơn hàng. Vui lòng thử lại.")
+    } finally {
+      setIsCompleting({ [order.id]: false })
+    }
   }
 
   // Lọc đơn hàng theo filterStatus
@@ -98,20 +215,29 @@ const OrderManagement = ({ filterStatus, orders = [], setOrders }) => {
                     </div>
                     {order.status === "Đang chờ" && (
                       <div className="order-actions">
-                        <button className="accept-btn" onClick={() => handleAcceptOrder(order.id)}>
-                          Nhận đơn
+                        <button 
+                          className="accept-btn" 
+                          onClick={() => handleAcceptOrder(order)}
+                          disabled={isAccepting[order.id]}
+                        >
+                          {isAccepting[order.id] ? "Đang xử lý..." : "Nhận đơn"}
                         </button>
-                        <button className="reject-btn" onClick={() => handleRejectOrder(order.id)}>
-                          Không nhận đơn
+                        <button 
+                          className="reject-btn" 
+                          onClick={() => handleRejectOrder(order)}
+                          disabled={isRejecting[order.id]}
+                        >
+                          {isRejecting[order.id] ? "Đang xử lý..." : "Không nhận đơn"}
                         </button>
                       </div>
                     )}
                     {order.status === "Đang giao" && (
                       <button
                         className="complete-prepare-btn"
-                        onClick={() => handleCompletePreparation(order.id)}
+                        onClick={() => handleCompletePreparation(order)}
+                        disabled={isCompleting[order.id]}
                       >
-                        Hoàn tất chuẩn bị
+                        {isCompleting[order.id] ? "Đang xử lý..." : "Hoàn tất chuẩn bị"}
                       </button>
                     )}
                     {order.status === "Đã giao" && (

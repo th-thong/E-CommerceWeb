@@ -4,7 +4,7 @@ import ProductManagement from "@/pages/Seller/ProductManager/ProductManagement"
 import OrderManagement from "@/pages/Seller/OrderManager/OrderManagement"
 import "./main-content.css"
 
-const MainContent = ({ activeMenu, orders, setOrders, products, setProducts }) => {
+const MainContent = ({ activeMenu, orders, setOrders, products, setProducts, onOrdersUpdate }) => {
   return (
     <main className="main-content">
       {activeMenu === "todo" && <TodoSection orders={orders} products={products} />}
@@ -19,7 +19,12 @@ const MainContent = ({ activeMenu, orders, setOrders, products, setProducts }) =
         activeMenu === "orders-pending" ||
         activeMenu === "orders-preparing" ||
         activeMenu === "orders-shipping") && (
-        <OrderManagement filterStatus={activeMenu} orders={orders} setOrders={setOrders} />
+        <OrderManagement 
+          filterStatus={activeMenu} 
+          orders={orders} 
+          setOrders={setOrders}
+          onOrdersUpdate={onOrdersUpdate}
+        />
       )}
     </main>
   )

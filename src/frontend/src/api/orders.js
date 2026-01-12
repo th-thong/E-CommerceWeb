@@ -1,4 +1,4 @@
-import { get, post, patch } from './client';
+import { get, post, patch, del } from './client';
 
 // User - lấy lịch sử mua hàng
 // GET /api/orders/
@@ -30,6 +30,14 @@ export function fetchShopStatistics(token) {
 // Request body: { order_status?: "pending" | "confirmed" | "shipped", payment_status?: "paid" | "pending" }
 export function updateOrderStatus(detailId, statusData, token) {
   return patch(`/shops/my-shop/orders/${detailId}/update/`, statusData, token);
+}
+
+// Seller - từ chối/xóa đơn hàng
+// DELETE /api/shops/my-shop/orders/{detail_id}/reject/
+// Xóa OrderDetail và hoàn trả số lượng sản phẩm về kho
+// Nếu Order không còn OrderDetail nào, sẽ xóa luôn Order
+export function rejectOrder(detailId, token) {
+  return del(`/shops/my-shop/orders/${detailId}/reject/`, token);
 }
 
 
