@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useCart } from "@/contexts/CartContext"
+import { fetchProductFeedbacks, createProductFeedback } from "@/api/feedback"
 import "./product-detail.css"
 
 // Helper function để map tên màu sang hex color
@@ -48,6 +49,74 @@ export default function ProductDetail({ product }) {
   const [selectedImage, setSelectedImage] = useState(product?.images?.[0] || "")
   const [selectedVariants, setSelectedVariants] = useState({})
   const [quantity, setQuantity] = useState(1)
+  
+  // Feedback states
+  const [feedbacks, setFeedbacks] = useState([])
+  const [feedbacksLoading, setFeedbacksLoading] = useState(false)
+  const [feedbackError, setFeedbackError] = useState(null)
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false)
+  const [feedbackForm, setFeedbackForm] = useState({ rating: 5, review: "" })
+  const [submittingFeedback, setSubmittingFeedback] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  
+  // Get token from localStorage
+  const getToken = () => {
+    const saved = localStorage.getItem("auth_tokens")
+    if (!saved) return null
+    try {
+      const tokens = JSON.parse(saved)
+      return tokens.accessToken || tokens.access || null
+    } catch {
+      return null
+    }
+  }
+
+  // Check login status
+  const checkLoginStatus = () => {
+    const token = getToken()
+    setIsLoggedIn(!!token)
+    return token
+  }
+
+  // Check login status on mount and when storage changes
+  useEffect(() => {
+    // Check initial status
+    checkLoginStatus()
+
+    // Listen for storage changes (when user logs in/out in another tab)
+    const handleStorageChange = (e) => {
+      if (e.key === 'auth_tokens' || e.key === null) {
+        checkLoginStatus()
+      }
+    }
+
+    // Listen for custom auth change events (from Navbar when login in same tab)
+    const handleAuthChange = () => {
+      // Delay a bit to ensure localStorage is updated
+      setTimeout(() => {
+        checkLoginStatus()
+      }, 100)
+    }
+
+    // Check when window gains focus (user comes back to tab)
+    const handleFocus = () => {
+      checkLoginStatus()
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('authTokensChanged', handleAuthChange)
+    window.addEventListener('focus', handleFocus)
+
+    // Also check periodically (every 2 seconds) in case of sync issues
+    const interval = setInterval(checkLoginStatus, 2000)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('authTokensChanged', handleAuthChange)
+      window.removeEventListener('focus', handleFocus)
+      clearInterval(interval)
+    }
+  }, [])
 
   useEffect(() => {
     setSelectedImage(product?.images?.[0] || "")
@@ -68,6 +137,29 @@ export default function ProductDetail({ product }) {
       console.log('Product shop data:', product.shop || product._originalData?.shop)
       console.log('Full product data:', product)
     }
+  }, [product])
+
+  // Load feedbacks when product changes
+  useEffect(() => {
+    const productId = product?._originalData?.product_id || product?.product_id
+    if (!productId) return
+
+    const loadFeedbacks = async () => {
+      setFeedbacksLoading(true)
+      setFeedbackError(null)
+      try {
+        const data = await fetchProductFeedbacks(productId)
+        setFeedbacks(data || [])
+      } catch (error) {
+        console.error('Error loading feedbacks:', error)
+        setFeedbackError('Không thể tải đánh giá')
+        setFeedbacks([])
+      } finally {
+        setFeedbacksLoading(false)
+      }
+    }
+
+    loadFeedbacks()
   }, [product])
 
   if (!product) {
@@ -224,6 +316,71 @@ export default function ProductDetail({ product }) {
 
   const currentPriceLabel = formatCurrency(discountedPriceNumber)
   const originalPriceLabel = hasDiscount ? formatCurrency(priceNumber) : null
+
+  // Handle feedback submission
+  const handleSubmitFeedback = async (e) => {
+    e.preventDefault()
+    
+    const token = checkLoginStatus()
+    if (!token) {
+      alert('Vui lòng đăng nhập để đánh giá sản phẩm')
+      return
+    }
+
+    if (!feedbackForm.review.trim()) {
+      alert('Vui lòng nhập nội dung đánh giá')
+      return
+    }
+
+    const productId = product?._originalData?.product_id || product?.product_id
+    if (!productId) return
+
+    setSubmittingFeedback(true)
+    try {
+      await createProductFeedback(productId, {
+        rating: feedbackForm.rating,
+        review: feedbackForm.review.trim()
+      }, token)
+      
+      // Reload feedbacks
+      const data = await fetchProductFeedbacks(productId)
+      setFeedbacks(data || [])
+      
+      // Reset form
+      setFeedbackForm({ rating: 5, review: "" })
+      setShowFeedbackForm(false)
+      alert('Cảm ơn bạn! Đánh giá của bạn đã được gửi.')
+    } catch (error) {
+      console.error('Error submitting feedback:', error)
+      const errorMessage = error.message || 'Không thể gửi đánh giá. Vui lòng thử lại.'
+      alert(errorMessage)
+    } finally {
+      setSubmittingFeedback(false)
+    }
+  }
+
+  // Render star rating
+  const renderStars = (rating) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <span key={i} style={{ color: i < rating ? '#ffc107' : '#666', fontSize: '1.2em' }}>
+        ★
+      </span>
+    ))
+  }
+
+  // Format date
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    } catch {
+      return dateString
+    }
+  }
 
   return (
     <section id="product-detail" className="product-detail">
@@ -398,16 +555,243 @@ export default function ProductDetail({ product }) {
           )}
         </article>
 
+        {/* Đánh giá sản phẩm */}
         <article className="panel">
-          <h2>Đánh giá nổi bật</h2>
-          <div className="panel__reviews">
-            {product.reviews?.map((review) => (
-              <div key={`${review.name}-${review.badge}`} className="review-card">
-                <div className="review-card__header">
-                  <span>{review.name}</span>
-                  <small>{review.badge}</small>
+          <h2>Đánh giá sản phẩm</h2>
+          
+          {/* Form đánh giá (chỉ hiện khi user đã đăng nhập) */}
+          {isLoggedIn && !showFeedbackForm && (
+            <div style={{ marginBottom: 24 }}>
+              <button
+                type="button"
+                onClick={() => setShowFeedbackForm(true)}
+                style={{
+                  padding: '10px 20px',
+                  background: 'var(--accent)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: '0.95em'
+                }}
+              >
+                Viết đánh giá
+              </button>
+            </div>
+          )}
+
+          {showFeedbackForm && (
+            <form onSubmit={handleSubmitFeedback} style={{
+              marginBottom: 24,
+              padding: 20,
+              background: "rgba(255, 255, 255, 0.03)",
+              borderRadius: 12,
+              border: "1px solid rgba(255, 255, 255, 0.08)"
+            }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                  Đánh giá của bạn: *
+                </label>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedbackForm({ ...feedbackForm, rating: star })}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '1.5em',
+                        color: star <= feedbackForm.rating ? '#ffc107' : '#666',
+                        padding: 0
+                      }}
+                    >
+                      ★
+                    </button>
+                  ))}
+                  <span style={{ marginLeft: 8, color: 'rgba(255, 255, 255, 0.7)' }}>
+                    ({feedbackForm.rating}/5)
+                  </span>
                 </div>
-                <p>{review.comment}</p>
+              </div>
+              
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                  Nhận xét: *
+                </label>
+                <textarea
+                  value={feedbackForm.review}
+                  onChange={(e) => setFeedbackForm({ ...feedbackForm, review: e.target.value })}
+                  placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
+                  required
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 8,
+                    color: 'white',
+                    fontSize: '0.95em',
+                    fontFamily: 'inherit',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+              
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  type="submit"
+                  disabled={submittingFeedback}
+                  style={{
+                    padding: '10px 24px',
+                    background: submittingFeedback ? '#666' : 'var(--accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: submittingFeedback ? 'not-allowed' : 'pointer',
+                    fontSize: '0.95em',
+                    fontWeight: 500
+                  }}
+                >
+                  {submittingFeedback ? 'Đang gửi...' : 'Gửi đánh giá'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowFeedbackForm(false)
+                    setFeedbackForm({ rating: 5, review: "" })
+                  }}
+                  disabled={submittingFeedback}
+                  style={{
+                    padding: '10px 24px',
+                    background: 'transparent',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: 8,
+                    cursor: submittingFeedback ? 'not-allowed' : 'pointer',
+                    fontSize: '0.95em'
+                  }}
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          )}
+
+          {!isLoggedIn && (
+            <div style={{
+              padding: 16,
+              marginBottom: 24,
+              background: "rgba(255, 255, 255, 0.03)",
+              borderRadius: 8,
+              textAlign: 'center',
+              color: 'rgba(255, 255, 255, 0.7)'
+            }}>
+              <p style={{ margin: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => navigate('/?modal=auth&tab=login')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--accent)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: 0
+                  }}
+                >
+                  Đăng nhập
+                </button>
+                {' '}để viết đánh giá
+              </p>
+            </div>
+          )}
+
+          {/* Danh sách đánh giá */}
+          <div className="panel__reviews">
+            {feedbacksLoading && (
+              <div style={{ padding: 20, textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)' }}>
+                Đang tải đánh giá...
+              </div>
+            )}
+            
+            {feedbackError && (
+              <div style={{ padding: 20, textAlign: 'center', color: '#ff6b6b' }}>
+                {feedbackError}
+              </div>
+            )}
+            
+            {!feedbacksLoading && !feedbackError && feedbacks.length === 0 && (
+              <div style={{ padding: 20, textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)' }}>
+                Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!
+              </div>
+            )}
+            
+            {!feedbacksLoading && feedbacks.length > 0 && feedbacks.map((feedback) => (
+              <div key={feedback.id} className="review-card" style={{
+                marginBottom: 16,
+                padding: 16,
+                background: "rgba(255, 255, 255, 0.03)",
+                borderRadius: 8,
+                border: "1px solid rgba(255, 255, 255, 0.08)"
+              }}>
+                <div className="review-card__header" style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: 12
+                }}>
+                  <div>
+                    <span style={{ fontWeight: 500, marginRight: 12 }}>{feedback.user_name}</span>
+                    <div style={{ marginTop: 4 }}>
+                      {renderStars(feedback.rating)}
+                    </div>
+                  </div>
+                  <small style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.85em' }}>
+                    {formatDate(feedback.created_at)}
+                  </small>
+                </div>
+                <p style={{ margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                  {feedback.review}
+                </p>
+                
+                {/* Replies */}
+                {feedback.items && feedback.items.length > 0 && (
+                  <div style={{
+                    marginTop: 16,
+                    paddingLeft: 16,
+                    borderLeft: '2px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    {feedback.items.map((reply) => (
+                      <div key={reply.id} style={{
+                        marginBottom: 12,
+                        paddingBottom: 12,
+                        borderBottom: feedback.items.indexOf(reply) < feedback.items.length - 1 
+                          ? '1px solid rgba(255, 255, 255, 0.05)' 
+                          : 'none'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: 4
+                        }}>
+                          <span style={{ fontWeight: 500, fontSize: '0.9em' }}>
+                            {reply.user_name}
+                          </span>
+                          <small style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.8em' }}>
+                            {formatDate(reply.created_at)}
+                          </small>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.9em', color: 'rgba(255, 255, 255, 0.8)' }}>
+                          {reply.review}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
