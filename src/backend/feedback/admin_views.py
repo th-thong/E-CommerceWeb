@@ -68,7 +68,7 @@ def get_all_feedbacks(request):
 
 @extend_schema(
     tags=['Admin - Feedback'],
-    summary="Chấp thuận feedback (phục hồi từ banned)",
+    summary="Duyệt feedback",
     parameters=[
         OpenApiParameter(
             name='feedback_id',
@@ -92,7 +92,7 @@ def get_all_feedbacks(request):
 @renderer_classes([JSONRenderer])
 def approve_feedback(request, feedback_id):
     """
-    Phục hồi feedback (chuyển status từ 'banned' sang 'normal')
+    Duyệt feedback (chuyển status từ 'pending' sang 'normal')
     """
     try:
         Feedback.objects.filter(id = feedback_id).update(status = 'normal')
@@ -105,36 +105,37 @@ def approve_feedback(request, feedback_id):
 
 @extend_schema(
     tags=['Admin - Feedback'],
-    summary="Ẩn feedback (ban)",
+    summary="Xóa feedback",
     parameters=[
         OpenApiParameter(
             name='feedback_id',
             type=int,
             location=OpenApiParameter.PATH,
-            description='ID của feedback cần ẩn',
+            description='ID của feedback cần xóa',
             required=True
         )
     ],
     responses={
-        200: FeedbackSerializer,
+        204: None,
         400: inline_serializer(
-            name='BanFeedbackError',
+            name='DeleteFeedbackError',
             fields={'error': serializers.CharField()}
         )
     }
 )
-@api_view(['PUT'])
+@api_view(['DELETE'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAdminUser]) 
 @renderer_classes([JSONRenderer])
-def ban_feedback(request, feedback_id):
+def delete_feedback(request, feedback_id):
     """
-    Ẩn feedback (chuyển status từ 'normal' sang 'banned')
+    Xóa feedback (xóa vĩnh viễn khỏi database)
     """
     try:
-        Feedback.objects.filter(id = feedback_id).update(status = 'banned')
-        feedback = Feedback.objects.get(id = feedback_id)
-        serializer = FeedbackSerializer(feedback)
-        return Response(serializer.data, status = status.HTTP_200_OK)
+        feedback = Feedback.objects.get(id=feedback_id)
+        feedback.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Feedback.DoesNotExist:
+        return Response({"error": "Feedback không tồn tại"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

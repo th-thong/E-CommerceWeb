@@ -126,11 +126,19 @@ export async function approveFeedback(feedbackId, token) {
   return handleResponse(res);
 }
 
-// Ẩn feedback (ban)
-export async function banFeedback(feedbackId, token) {
-  const res = await fetch(`${ADMIN_BASE}/ban-feedback/${feedbackId}/`, {
-    method: 'PUT',
+// Xóa feedback
+export async function deleteFeedback(feedbackId, token) {
+  const res = await fetch(`${ADMIN_BASE}/delete-feedback/${feedbackId}/`, {
+    method: 'DELETE',
     headers: buildHeaders(token),
   });
+  // DELETE có thể trả về 204 No Content
+  if (res.status === 204) {
+    return { success: true };
+  }
+  // Nếu có lỗi, handleResponse sẽ throw error
+  if (!res.ok) {
+    return handleResponse(res);
+  }
   return handleResponse(res);
 }

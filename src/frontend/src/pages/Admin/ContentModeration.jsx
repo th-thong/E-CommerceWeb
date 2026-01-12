@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getAllFeedbacks, approveFeedback, banFeedback } from "@/api/admin"
+import { getAllFeedbacks, approveFeedback, deleteFeedback } from "@/api/admin"
 import "../Seller/ProductManager/section.css"
 
 const AdminContentModeration = () => {
@@ -54,39 +54,39 @@ const AdminContentModeration = () => {
     fetchFeedbacks()
   }, [])
 
-  // Xử lý ẩn feedback
-  const handleBanFeedback = async (feedbackId) => {
-    if (!window.confirm("Bạn có chắc muốn ẩn đánh giá này?")) return
+  // Xử lý xóa feedback
+  const handleDeleteFeedback = async (feedbackId) => {
+    if (!window.confirm("Bạn có chắc muốn xóa đánh giá này? Hành động này không thể hoàn tác.")) return
     
     setActionLoading(feedbackId)
     try {
       const token = getToken()
-      await banFeedback(feedbackId, token)
-      alert("Đã ẩn đánh giá thành công!")
+      await deleteFeedback(feedbackId, token)
+      alert("Đã xóa đánh giá thành công!")
       // Reload danh sách
       await fetchFeedbacks()
     } catch (err) {
-      console.error("Error banning feedback:", err)
-      alert("Lỗi: " + (err.message || "Không thể ẩn đánh giá"))
+      console.error("Error deleting feedback:", err)
+      alert("Lỗi: " + (err.message || "Không thể xóa đánh giá"))
     } finally {
       setActionLoading(null)
     }
   }
 
-  // Xử lý phục hồi feedback (bỏ ẩn)
+  // Xử lý duyệt feedback (pending -> normal)
   const handleApproveFeedback = async (feedbackId) => {
-    if (!window.confirm("Bạn có chắc muốn phục hồi đánh giá này?")) return
+    if (!window.confirm("Bạn có chắc muốn duyệt đánh giá này?")) return
     
     setActionLoading(feedbackId)
     try {
       const token = getToken()
       await approveFeedback(feedbackId, token)
-      alert("Đã phục hồi đánh giá thành công!")
+      alert("Đã duyệt đánh giá thành công!")
       // Reload danh sách
       await fetchFeedbacks()
     } catch (err) {
       console.error("Error approving feedback:", err)
-      alert("Lỗi: " + (err.message || "Không thể phục hồi đánh giá"))
+      alert("Lỗi: " + (err.message || "Không thể duyệt đánh giá"))
     } finally {
       setActionLoading(null)
     }
@@ -206,8 +206,14 @@ const AdminContentModeration = () => {
                       {formatDate(feedback.created_at)}
                     </span>
                   </div>
-                  <span className={`status ${feedback.status === 'banned' ? 'rejected' : 'active'}`}>
-                    {feedback.status === 'banned' ? 'Đã ẩn' : 'Hiển thị'}
+                  <span className={`status ${
+                    feedback.status === 'pending' ? 'pending' : 
+                    feedback.status === 'normal' ? 'active' : 
+                    'rejected'
+                  }`}>
+                    {feedback.status === 'pending' ? 'Chờ duyệt' : 
+                     feedback.status === 'normal' ? 'Hiển thị' : 
+                     'Đã ẩn'}
                   </span>
                 </div>
 
@@ -280,19 +286,28 @@ const AdminContentModeration = () => {
                     <div className="order-actions">
                       {actionLoading === feedback.id ? (
                         <span style={{ color: "#aaa" }}>Đang xử lý...</span>
-                      ) : feedback.status === 'banned' ? (
-                        <button
-                          className="accept-btn"
-                          onClick={() => handleApproveFeedback(feedback.id)}
-                        >
-                          Bỏ ẩn (Phục hồi)
-                        </button>
+                      ) : feedback.status === 'pending' ? (
+                        <>
+                          <button
+                            className="accept-btn"
+                            onClick={() => handleApproveFeedback(feedback.id)}
+                            style={{ marginRight: 8 }}
+                          >
+                            Duyệt
+                          </button>
+                          <button
+                            className="reject-btn"
+                            onClick={() => handleDeleteFeedback(feedback.id)}
+                          >
+                            Xóa
+                          </button>
+                        </>
                       ) : (
                         <button
                           className="reject-btn"
-                          onClick={() => handleBanFeedback(feedback.id)}
+                          onClick={() => handleDeleteFeedback(feedback.id)}
                         >
-                          Ẩn đánh giá
+                          Xóa
                         </button>
                       )}
                     </div>

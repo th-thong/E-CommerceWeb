@@ -6,10 +6,11 @@ class Feedback(models.Model):
     review = models.TextField()
     
     STATUS_CHOICES = (
+        ('pending', 'Pending'),
         ('banned', 'Banned'),
         ('normal', 'Normal'), 
     )
-    status = models.CharField(max_length=7, choices=STATUS_CHOICES, default='normal')
+    status = models.CharField(max_length=7, choices=STATUS_CHOICES, default='pending')
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE,
