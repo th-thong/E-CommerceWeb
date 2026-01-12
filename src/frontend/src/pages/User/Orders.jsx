@@ -81,6 +81,14 @@ const Orders = () => {
     }
   }
 
+  const getPaymentStatusLabel = (status) => {
+    switch(status) {
+      case "paid": return "Đã thanh toán"
+      case "pending": return "Chờ thanh toán"
+      default: return status
+    }
+  }
+
   return (
     <div className="container">
       <BackgroundAnimation />
@@ -128,6 +136,19 @@ const Orders = () => {
                                 </span>
                               )}
                               <span className="item-qty">x{item.quantity}</span>
+                              {/* Hiển thị trạng thái đơn hàng và thanh toán cho từng item */}
+                              <div className="item-status" style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                {item.order_status && (
+                                  <span className={`status-badge ${item.order_status}`} style={{ fontSize: '12px', padding: '4px 8px' }}>
+                                    {getStatusLabel(item.order_status)}
+                                  </span>
+                                )}
+                                {item.payment_status && (
+                                  <span className={`status-badge ${item.payment_status}`} style={{ fontSize: '12px', padding: '4px 8px' }}>
+                                    {getPaymentStatusLabel(item.payment_status)}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <span className="item-price">{formatPrice(item.price)}</span>
                           </div>

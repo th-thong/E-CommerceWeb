@@ -107,6 +107,17 @@ export async function put(path, body, token, extraHeaders) {
   }, token);
 }
 
+export async function patch(path, body, token, extraHeaders) {
+  return retryWithRefreshToken(async (t) => {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'PATCH',
+      headers: buildHeaders(t, extraHeaders),
+      body: JSON.stringify(body),
+    });
+    return await handleResponse(res);
+  }, token);
+}
+
 export async function del(path, token) {
   return retryWithRefreshToken(async (t) => {
     const res = await fetch(`${API_BASE}${path}`, {

@@ -1635,6 +1635,18 @@ components:
           allOf:
           - $ref: '#/components/schemas/PaymentTypeEnum'
           default: COD
+        full_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        address:
+          type: string
+        note:
+          type: string
       required:
       - items
     NewOrderDetail:
@@ -1689,6 +1701,18 @@ components:
           items:
             $ref: '#/components/schemas/OrderDetail'
           readOnly: true
+        full_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        address:
+          type: string
+        note:
+          type: string
       required:
       - created_at
       - id
@@ -1760,6 +1784,18 @@ components:
           items:
             $ref: '#/components/schemas/OrderItem'
           readOnly: true
+        full_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        address:
+          type: string
+        note:
+          type: string
       required:
       - created_at
       - id
@@ -2164,6 +2200,18 @@ components:
           type: string
           format: email
           readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        phone_number:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
         product:
           type: integer
         product_name:
@@ -2196,11 +2244,15 @@ components:
         payment_type:
           $ref: '#/components/schemas/PaymentTypeEnum'
       required:
+      - address
       - created_at
       - customer_email
       - customer_name
+      - full_name
       - id
+      - note
       - order_id
+      - phone_number
       - price
       - product
       - product_image
