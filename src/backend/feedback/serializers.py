@@ -44,7 +44,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
     items = ReplySerializer(source='replies',many = True, read_only = True)
     class Meta:
         model = Feedback
-        fields = ['id', 'rating', 'review', 'user_name','user_id', 'created_at','items']
+        fields = ['id', 'rating', 'review', 'user_name','user_id', 'created_at','items', 'status']
 
 class NewFeedbackSerializer(serializers.Serializer):
     rating = serializers.IntegerField(min_value = 1, max_value = 5)

@@ -30,7 +30,45 @@ def get_feedback(request, product_id):
 
 @extend_schema(
     tags=['Admin - Feedback'],
-    summary="Chấp thuận feedback",
+    summary="Lấy danh sách tất cả feedbacks",
+    description="Lấy tất cả đánh giá của tất cả sản phẩm (bao gồm cả normal và banned) để admin kiểm duyệt",
+    responses={200: FeedbackSerializer(many=True)}
+)
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAdminUser]) 
+@renderer_classes([JSONRenderer])
+def get_all_feedbacks(request):
+    """
+    Lấy tất cả feedbacks của tất cả sản phẩm (parent=None, chỉ lấy feedback chính, không lấy replies)
+    Bao gồm cả status='normal' và status='banned'
+    """
+    try:
+        feedbacks = Feedback.objects.filter(
+            parent__isnull=True
+        ).select_related('product', 'user').prefetch_related('replies').order_by('-created_at')
+        
+        # Serialize với thông tin product
+        result = []
+        for feedback in feedbacks:
+            feedback_data = FeedbackSerializer(feedback).data
+            feedback_data['product_id'] = feedback.product.id
+            feedback_data['product_name'] = feedback.product.product_name
+            result.append(feedback_data)
+        
+        return Response(result, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"Error getting all feedbacks: {e}")
+        return Response(
+            {'message': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@extend_schema(
+    tags=['Admin - Feedback'],
+    summary="Chấp thuận feedback (phục hồi từ banned)",
     parameters=[
         OpenApiParameter(
             name='feedback_id',
@@ -53,8 +91,48 @@ def get_feedback(request, product_id):
 @permission_classes([IsAdminUser]) 
 @renderer_classes([JSONRenderer])
 def approve_feedback(request, feedback_id):
+    """
+    Phục hồi feedback (chuyển status từ 'banned' sang 'normal')
+    """
     try:
         Feedback.objects.filter(id = feedback_id).update(status = 'normal')
+        feedback = Feedback.objects.get(id = feedback_id)
+        serializer = FeedbackSerializer(feedback)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    tags=['Admin - Feedback'],
+    summary="Ẩn feedback (ban)",
+    parameters=[
+        OpenApiParameter(
+            name='feedback_id',
+            type=int,
+            location=OpenApiParameter.PATH,
+            description='ID của feedback cần ẩn',
+            required=True
+        )
+    ],
+    responses={
+        200: FeedbackSerializer,
+        400: inline_serializer(
+            name='BanFeedbackError',
+            fields={'error': serializers.CharField()}
+        )
+    }
+)
+@api_view(['PUT'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAdminUser]) 
+@renderer_classes([JSONRenderer])
+def ban_feedback(request, feedback_id):
+    """
+    Ẩn feedback (chuyển status từ 'normal' sang 'banned')
+    """
+    try:
+        Feedback.objects.filter(id = feedback_id).update(status = 'banned')
         feedback = Feedback.objects.get(id = feedback_id)
         serializer = FeedbackSerializer(feedback)
         return Response(serializer.data, status = status.HTTP_200_OK)

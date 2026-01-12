@@ -101,6 +101,14 @@ export async function approveProduct(productId, token) {
 
 // ==================== CONTENT MODERATION (FEEDBACK) ====================
 
+// Lấy danh sách tất cả feedbacks (cho admin kiểm duyệt)
+export async function getAllFeedbacks(token) {
+  const res = await fetch(`${ADMIN_BASE}/feedbacks/`, {
+    headers: buildHeaders(token),
+  });
+  return handleResponse(res);
+}
+
 // Lấy danh sách các feedback bị cấm của sản phẩm
 export async function getBannedFeedback(productId, token) {
   const res = await fetch(`${ADMIN_BASE}/banned-feedback/${productId}/`, {
@@ -109,9 +117,18 @@ export async function getBannedFeedback(productId, token) {
   return handleResponse(res);
 }
 
-// Chấp thuận feedback (phục hồi từ trạng thái bị cấm)
+// Chấp thuận feedback (phục hồi từ trạng thái bị cấm - unban)
 export async function approveFeedback(feedbackId, token) {
   const res = await fetch(`${ADMIN_BASE}/approve-feedback/${feedbackId}/`, {
+    method: 'PUT',
+    headers: buildHeaders(token),
+  });
+  return handleResponse(res);
+}
+
+// Ẩn feedback (ban)
+export async function banFeedback(feedbackId, token) {
+  const res = await fetch(`${ADMIN_BASE}/ban-feedback/${feedbackId}/`, {
     method: 'PUT',
     headers: buildHeaders(token),
   });
