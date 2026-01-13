@@ -8,14 +8,12 @@ import Account from "./pages/User/Account"
 import Orders from "./pages/User/Orders"
 import SellerRegistrationPage from "./pages/SellerRegistrationPage"
 import { CartProvider } from "./contexts/CartContext"
-import { NotificationProvider } from "./contexts/NotificationContext"
 
 const App = () => {
   return (
     <BrowserRouter>
       <CartProvider>
-        <NotificationProvider>
-          <Routes>
+        <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/product/:productId" element={<ProductPage />} />
           <Route path="/admin" element={<Admin />} />
@@ -24,8 +22,7 @@ const App = () => {
           <Route path="/checkout" element={<Payment />} />
           <Route path="/account" element={<Account />} />
           <Route path="/orders" element={<Orders />} />
-          </Routes>
-        </NotificationProvider>
+        </Routes>
       </CartProvider>
     </BrowserRouter>
   )

@@ -5,7 +5,6 @@ import Sidebar from "@/components/Layout/Sidebar/Sidebar";
 import MainContent from "@/components/Seller/main-content"
 import { fetchMyShopOrders } from "@/api/orders"
 import { getProfile } from "@/api/auth"
-import { useFeedbackNotifications } from "@/hooks/useFeedbackNotifications"
 import "./Dashboard.css"
 
 const TOKEN_KEY = "auth_tokens"
@@ -117,9 +116,6 @@ const SellerDashboard = () => {
 
     checkSellerPermission()
   }, [navigate])
-
-  // Check feedback notifications khi là seller
-  useFeedbackNotifications(isSeller, !isCheckingPermission)
 
   // Hàm reload đơn hàng sau khi cập nhật
   const reloadOrders = async () => {
