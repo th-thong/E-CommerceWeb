@@ -9,7 +9,7 @@ from django.db import transaction, IntegrityError
 from decimal import Decimal
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
-
+from decimal import Decimal
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -108,7 +108,11 @@ class NewOrderSerializer(serializers.ModelSerializer):
                 product.save()
             # -----------------------------------------------------------
 
-            line_total_price = unit_price * quantity
+            unit_price = variant.price if variant else product.base_price
+            discount_percent = product.discount if product.discount else 0
+            discount_factor = Decimal(1) - (Decimal(discount_percent) / Decimal(100))
+            print(discount_factor)
+            line_total_price = (unit_price * quantity) * discount_factor
             total_order_price += line_total_price
 
             # Tạo OrderDetail
