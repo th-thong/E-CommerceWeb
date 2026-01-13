@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import Sidebar from "@/components/Layout/Sidebar/Sidebar";
 import MainContent from "@/components/Seller/main-content"
 import { fetchMyShopOrders } from "@/api/orders"
@@ -12,12 +12,24 @@ const TOKEN_KEY = "auth_tokens"
 
 const SellerDashboard = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [activeMenu, setActiveMenu] = useState("todo")
   const [products, setProducts] = useState([])
   const [orders, setOrders] = useState([])
   const [isCheckingPermission, setIsCheckingPermission] = useState(true)
   const [showPermissionModal, setShowPermissionModal] = useState(false)
   const [isSeller, setIsSeller] = useState(false)
+
+  // Check query param để set activeMenu (ví dụ: /seller?menu=feedback-management)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const menuParam = searchParams.get('menu')
+    if (menuParam === 'feedback-management') {
+      setActiveMenu('feedback-management')
+      // Xóa query param sau khi set để URL sạch
+      navigate(location.pathname, { replace: true })
+    }
+  }, [location.search, location.pathname, navigate])
 
   useEffect(() => {
     const checkSellerPermission = async () => {

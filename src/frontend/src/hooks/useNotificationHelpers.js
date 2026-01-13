@@ -67,7 +67,7 @@ export const useNotificationHelpers = () => {
       message: count === 1 
         ? `Khách hàng đã đánh giá sản phẩm "${productName}".`
         : `Có ${count} đánh giá mới cho các sản phẩm của bạn.`,
-      link: `/seller`,
+      link: `/seller?menu=feedback-management`,
     })
   }
 
