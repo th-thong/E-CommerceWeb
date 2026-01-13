@@ -129,7 +129,7 @@ const AdminUserManagement = () => {
     setActionLoading(userId)
     try {
       const token = getToken()
-      await updateUser(userId, { status: "banned" }, token)
+      await updateUser(userId, { status: "banned", is_active: false}, token)
       alert("Đã khóa tài khoản!")
       fetchUsers()
     } catch (err) {
@@ -145,7 +145,7 @@ const AdminUserManagement = () => {
     setActionLoading(userId)
     try {
       const token = getToken()
-      await updateUser(userId, { status: "active" }, token)
+      await updateUser(userId, { status: "active" , is_active: true}, token)
       alert("Đã mở khóa tài khoản!")
       fetchUsers()
     } catch (err) {

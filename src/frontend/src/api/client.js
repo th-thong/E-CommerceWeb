@@ -67,20 +67,38 @@ export async function get(path, token) {
 }
 
 // Helper function để retry request với token mới khi gặp 401
-async function retryWithRefreshToken(fetchFn, token) {
+export async function retryWithRefreshToken(fetchFn, token) {
   try {
     return await fetchFn(token);
   } catch (error) {
-    // Nếu là lỗi 401 và có token, thử refresh token và retry
-    if (error.status === 401 && token) {
-      const newToken = await refreshAccessTokenIfNeeded();
-      if (newToken) {
-        // Retry với token mới
-        return await fetchFn(newToken);
+    if (error.status === 401) {
+      const errorData = error.data;
+
+      // TRƯỜNG HỢP 1: Token hết hạn
+      if (errorData?.code === 'token_not_valid') {
+        console.log("Access Token hết hạn, đang thử làm mới...");
+        const newToken = await refreshAccessTokenIfNeeded();
+        if (newToken) {
+          return await fetchFn(newToken);
+        }
+        localStorage.removeItem(TOKEN_KEY);
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       }
-      // Nếu không refresh được, throw error yêu cầu đăng nhập lại
-      throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+
+      // TRƯỜNG HỢP 2: Tài khoản bị khóa
+      if (errorData?.code === 'user_inactive') {
+        console.warn("Tài khoản bị khóa, đang đăng xuất người dùng...");
+        localStorage.removeItem(TOKEN_KEY);
+        window.location.href = "/";
+        throw new Error('Tài khoản của bạn đã bị khóa.');
+      }
+
+      // TRƯỜNG HỢP 3: Các mã 401 khác
+      localStorage.removeItem(TOKEN_KEY);
+      throw new Error('Vui lòng đăng nhập để thực hiện hành động này.');
     }
+    
+    // Nếu không phải 401, throw lỗi như bình thường
     throw error;
   }
 }
@@ -155,10 +173,3 @@ export async function putFormData(path, formData, token) {
     return await handleResponse(res);
   }, token);
 }
-
-
-
-
-
-
-

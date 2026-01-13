@@ -91,6 +91,7 @@ def update_user(request, user_id):
 
         role = data.get("role")
         sta = data.get("status")
+        active=data.get("is_active")
 
         prev_user = User.objects.get(id = user_id)
         if role is not None:
@@ -98,6 +99,9 @@ def update_user(request, user_id):
             prev_user.groups.add(group)
         if sta is not None:
             User.objects.filter(id = user_id).update(status = sta)
+            
+        if active is not None:
+            User.objects.filter(id=user_id).update(is_active=active)
             
         user = User.objects.get(id = user_id)
         serializer = UserSerializer(user)

@@ -5,6 +5,7 @@ import { getProfile, updateProfile } from "@/api/auth"
 import BackgroundAnimation from "@/components/Common/BackgroundAnimation/BackgroundAnimation"
 import Navbar from "@/components/Layout/Navbar/Navbar"
 import "./User.css"
+import { retryWithRefreshToken } from '../../api/client';
 
 const Account = () => {
   const [profile, setProfile] = useState(null)
@@ -42,7 +43,7 @@ const Account = () => {
       return
     }
     try {
-      const data = await getProfile(token)
+      const data = await retryWithRefreshToken(getProfile, token)
       setProfile(data)
       setFormData({
         user_name: data.user_name || "",
