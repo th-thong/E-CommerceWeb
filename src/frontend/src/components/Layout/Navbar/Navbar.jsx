@@ -1,10 +1,12 @@
 import "./Navbar.css";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AuthModal from "@/components/Common/AuthModal/AuthModal";
 import { getProfile } from "@/api/auth";
 import Cart from "@/components/Cart/Cart";
 import { useCart } from "@/contexts/CartContext";
+import NotificationBell from "@/components/Common/NotificationBell/NotificationBell";
+import { useNotificationHelpers } from "@/hooks/useNotificationHelpers";
 
 const TOKEN_KEY = "auth_tokens";
 const CART_KEY_PREFIX = 'cart_';
@@ -26,6 +28,8 @@ const Navbar = () => {
   });
   const [profile, setProfile] = useState(null);
   const [profileError, setProfileError] = useState(null);
+  const prevProfileRef = useRef(null);
+  const { notifySellerApproved } = useNotificationHelpers();
 
   // Kiểm tra query param để mở modal đăng nhập
   useEffect(() => {
@@ -54,7 +58,15 @@ const Navbar = () => {
       try {
         const data = await getProfile(tokens.access);
         console.log('[Navbar] Profile fetched, user_id:', data.user_id);
+        
+        // Kiểm tra nếu seller được duyệt (status chuyển từ pending -> active và có role Seller)
+        const prevProfile = prevProfileRef.current;
+        if (prevProfile && prevProfile.status === 'pending' && data.status === 'active' && data.role === 'Seller') {
+          notifySellerApproved();
+        }
+        
         setProfile(data);
+        prevProfileRef.current = data;
         setProfileError(null);
         
         // Lưu user_id vào tokens để dùng cho giỏ hàng (chỉ khi chưa có hoặc thay đổi)
@@ -295,6 +307,7 @@ const Navbar = () => {
           <div className="navbar-right">
             {tokens ? (
               <>
+                {tokens && <NotificationBell />}
                 <div className="navbar-user-wrapper">
                   <div className="navbar-user">
                     <div className="navbar-avatar">

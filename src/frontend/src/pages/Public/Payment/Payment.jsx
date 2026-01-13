@@ -4,6 +4,7 @@ import { createOrder } from "@/api/orders"
 import { confirmCOD } from "@/api/payment"
 import { getProfile } from "@/api/auth"
 import { useNavigate, Link } from "react-router-dom"
+import { useNotificationHelpers } from "@/hooks/useNotificationHelpers"
 import "./Payment.css"
 
 const formatCurrency = (v) => v.toLocaleString("vi-VN") + "đ"
@@ -13,6 +14,7 @@ const TOKEN_KEY = "auth_tokens"
 export default function Payment() {
   const { cartItems, getTotalPrice, clearCart } = useCart()
   const navigate = useNavigate()
+  const { notifyOrderSuccess } = useNotificationHelpers()
 
   const [paymentMethod, setPaymentMethod] = useState("cod")
   const [name, setName] = useState("")
@@ -140,6 +142,8 @@ export default function Payment() {
       if (paymentMethod === "cod") {
         await confirmCOD(orderId, token)
         clearCart()
+        // Thêm thông báo
+        notifyOrderSuccess(orderId)
         setStatus({ 
           type: "success", 
           message: "Đặt hàng thành công! Đơn hàng đang chờ xác nhận." 
