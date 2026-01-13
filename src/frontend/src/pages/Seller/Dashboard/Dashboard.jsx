@@ -5,6 +5,7 @@ import Sidebar from "@/components/Layout/Sidebar/Sidebar";
 import MainContent from "@/components/Seller/main-content"
 import { fetchMyShopOrders } from "@/api/orders"
 import { getProfile } from "@/api/auth"
+import { useFeedbackNotifications } from "@/hooks/useFeedbackNotifications"
 import "./Dashboard.css"
 
 const TOKEN_KEY = "auth_tokens"
@@ -16,6 +17,7 @@ const SellerDashboard = () => {
   const [orders, setOrders] = useState([])
   const [isCheckingPermission, setIsCheckingPermission] = useState(true)
   const [showPermissionModal, setShowPermissionModal] = useState(false)
+  const [isSeller, setIsSeller] = useState(false)
 
   useEffect(() => {
     const checkSellerPermission = async () => {
@@ -36,12 +38,14 @@ const SellerDashboard = () => {
         // Kiểm tra xem user có phải seller không
         if (profile.role !== "Seller") {
           // Nếu không phải seller, hiển thị popup
+          setIsSeller(false)
           setShowPermissionModal(true)
           setIsCheckingPermission(false)
           return
         }
 
         // Nếu là seller, tiếp tục load dữ liệu
+        setIsSeller(true)
         setIsCheckingPermission(false)
         loadOrders(accessToken)
       } catch (error) {
@@ -101,6 +105,9 @@ const SellerDashboard = () => {
 
     checkSellerPermission()
   }, [navigate])
+
+  // Check feedback notifications khi là seller
+  useFeedbackNotifications(isSeller, !isCheckingPermission)
 
   // Hàm reload đơn hàng sau khi cập nhật
   const reloadOrders = async () => {

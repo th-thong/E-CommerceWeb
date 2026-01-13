@@ -60,6 +60,17 @@ export const useNotificationHelpers = () => {
     })
   }
 
+  const notifyNewFeedback = (productName, count = 1) => {
+    return addNotification({
+      type: NOTIFICATION_TYPES.FEEDBACK_NEW,
+      title: 'Có đánh giá mới',
+      message: count === 1 
+        ? `Khách hàng đã đánh giá sản phẩm "${productName}".`
+        : `Có ${count} đánh giá mới cho các sản phẩm của bạn.`,
+      link: `/seller`,
+    })
+  }
+
   return {
     notifyOrderSuccess,
     notifyOrderConfirmed,
@@ -67,5 +78,6 @@ export const useNotificationHelpers = () => {
     notifySellerApproved,
     notifyProductApproved,
     notifyFeedbackReply,
+    notifyNewFeedback,
   }
 }

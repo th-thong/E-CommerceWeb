@@ -58,6 +58,8 @@ const NotificationBell = () => {
         return '🚚'
       case 'feedback_reply':
         return '💬'
+      case 'feedback_new':
+        return '⭐'
       case 'product_approved':
         return '✔️'
       default:

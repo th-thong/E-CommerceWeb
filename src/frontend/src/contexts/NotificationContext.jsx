@@ -11,6 +11,7 @@ export const NOTIFICATION_TYPES = {
   ORDER_CONFIRMED: 'order_confirmed',
   ORDER_SHIPPED: 'order_shipped',
   FEEDBACK_REPLY: 'feedback_reply',
+  FEEDBACK_NEW: 'feedback_new',
   PRODUCT_APPROVED: 'product_approved',
 }
 
