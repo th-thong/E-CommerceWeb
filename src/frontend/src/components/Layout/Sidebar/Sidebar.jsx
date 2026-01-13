@@ -26,9 +26,7 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
     {
       title: "Chăm sóc khách hàng",
       items: [
-        "Quản lý Chat",
         { label: "Quản lý đánh giá", id: "feedback-management" },
-        "Tài chính"
       ],
     },
   ]

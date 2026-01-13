@@ -468,61 +468,6 @@ const HomePage = () => {
         </section>
       )}
 
-      {recommendProducts.length > 0 && (
-        <section className="promoted-section recommend-section">
-          <h2>💡 Gợi ý Sản Phẩm</h2>
-          <div className="products-grid">
-            {recommendProducts.map((product) => {
-              const displayPrice = product.discount > 0 
-                ? product.base_price * (1 - product.discount / 100)
-                : product.base_price
-              
-              return (
-                <Link 
-                  key={product.product_id} 
-                  to={`/product/${product.product_id}`} 
-                  className="product-card-link"
-                >
-                  <div className="product-card">
-                    <div className="product-image">
-                      <img 
-                        src={product.images?.[0]?.image_url || "/placeholder.svg"} 
-                        alt={product.product_name}
-                        onError={(e) => {
-                          e.target.src = "/placeholder.svg"
-                        }}
-                      />
-                      {product.discount > 0 && (
-                        <div className="discount-badge">-{product.discount}%</div>
-                      )}
-                    </div>
-                    <div className="product-info">
-                      <h4>{product.product_name}</h4>
-                      {product.discount > 0 ? (
-                        <div className="price-section">
-                          <p className="sale-price">{formatPrice(displayPrice)}</p>
-                          <p className="original-price">{formatPrice(product.base_price)}</p>
-                        </div>
-                      ) : (
-                        <p className="product-price">{formatPrice(product.base_price)}</p>
-                      )}
-                      <div className="product-stats">
-                        <span className="rating">
-                          ⭐ {product.average_rating || 0}
-                        </span>
-                        <span className="sold">
-                          Đã bán {formatSoldCount(product.total_sold || 0)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
       {allProducts.length > 0 && (
         <section className="promoted-section all-products-section">
           <h2>🛍️ Tất Cả Sản Phẩm</h2>

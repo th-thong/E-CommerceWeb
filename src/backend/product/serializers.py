@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from django.db import transaction
+from django.db.models import Sum
 from .models import Product, ProductImage, ProductVariant
 from .utils import upload_image, rename_product_image
 from shop.serializers import ShopSerializer
+from order.models import OrderDetail
 import json
 from django.conf import settings
 
@@ -42,6 +44,7 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     variants = ProductVariantSerializer(many=True, read_only=True)
     shop = ShopSerializer(read_only=True)
+    total_sold = serializers.SerializerMethodField()
     
     # 1. Nhận danh sách file ảnh upload
     uploaded_images = serializers.ListField(
@@ -66,10 +69,18 @@ class ProductSerializer(serializers.ModelSerializer):
             'product_id', 'product_name', 'description', 
             'base_price', 'discount', 'category', 'shop',
             'is_active', 'created_at', 'updated_at',
-            'images', 'variants',           # Output
+            'images', 'variants', 'total_sold',           # Output
             'uploaded_images', 'variants_input', 'images_to_delete' # Input
         ]
         read_only_fields = ['shop', 'created_at', 'updated_at']
+    
+    def get_total_sold(self, obj):
+        """Tính tổng số lượng sản phẩm đã bán từ các đơn hàng đã giao thành công (shipped)"""
+        total = OrderDetail.objects.filter(
+            product=obj,
+            order_status='shipped'
+        ).aggregate(total=Sum('quantity'))['total']
+        return total if total else 0
 
     def _parse_variant_attributes(self, variants_data):
             """Hỗ trợ parse dữ liệu variant từ JSON string hoặc List."""
