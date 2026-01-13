@@ -2,6 +2,7 @@ import TodoSection from "./TodoList"
 import AnalyticsSection from "./AnalyticsChart"
 import ProductManagement from "@/pages/Seller/ProductManager/ProductManagement"
 import OrderManagement from "@/pages/Seller/OrderManager/OrderManagement"
+import FeedbackManagement from "@/pages/Seller/FeedbackManager/FeedbackManagement"
 import "./main-content.css"
 
 const MainContent = ({ activeMenu, orders, setOrders, products, setProducts, onOrdersUpdate }) => {
@@ -26,6 +27,7 @@ const MainContent = ({ activeMenu, orders, setOrders, products, setProducts, onO
           onOrdersUpdate={onOrdersUpdate}
         />
       )}
+      {activeMenu === "feedback-management" && <FeedbackManagement />}
     </main>
   )
 }
