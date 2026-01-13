@@ -70,6 +70,15 @@ const SellerDashboard = () => {
     const loadOrders = async (accessToken) => {
       try {
         const data = await fetchMyShopOrders(accessToken)
+        
+        // Debug: Log raw data from API
+        console.log('[API Response] Raw data from backend:', data)
+        if (data && data.length > 0) {
+          console.log('[API Response] First item:', data[0])
+          console.log('[API Response] First item price:', data[0].price)
+          console.log('[API Response] First item subtotal:', data[0].subtotal)
+          console.log('[API Response] First item quantity:', data[0].quantity)
+        }
 
         // API trả về danh sách ShopOrderDetail (dữ liệu thật từ backend)
         const mappedOrders = (data || []).map((item, index) => {
@@ -82,10 +91,44 @@ const SellerDashboard = () => {
 
           const quantityNumber = item.quantity ?? 0
           const priceNumber = Number.parseFloat(item.price) || 0
-          const subtotalNumber =
-            item.subtotal !== undefined && item.subtotal !== null
-              ? Number.parseFloat(item.subtotal)
-              : priceNumber * quantityNumber
+          const subtotalFromBackend = item.subtotal !== undefined && item.subtotal !== null
+            ? Number.parseFloat(item.subtotal)
+            : null
+          
+          // Ưu tiên dùng price từ backend (đã là tổng tiền dòng)
+          // Chỉ dùng subtotal nếu nó hợp lý (không quá lớn so với price)
+          // Tránh trường hợp subtotal bị nhân 2 lần từ đơn hàng cũ
+          let subtotalNumber = priceNumber // Mặc định dùng price
+          if (subtotalFromBackend !== null) {
+            // Nếu subtotal gần bằng price (sai số < 10%), thì dùng subtotal
+            // Nếu subtotal lớn hơn price nhiều (có thể bị nhân 2 lần), thì dùng price
+            const diff = Math.abs(subtotalFromBackend - priceNumber) / priceNumber
+            if (diff < 0.1) {
+              subtotalNumber = subtotalFromBackend
+            } else {
+              // subtotal có vẻ sai, dùng price thay thế
+              console.warn('[Order Mapping] subtotal seems incorrect, using price instead', {
+                price: priceNumber,
+                subtotal: subtotalFromBackend,
+                diff: diff
+              })
+              subtotalNumber = priceNumber
+            }
+          }
+
+          // Tính đơn giá từ tổng tiền
+          const unitPrice = quantityNumber > 0 ? subtotalNumber / quantityNumber : 0
+
+          // Debug log - in từng giá trị riêng để dễ đọc
+          console.log('[Order Mapping - loadOrders] Item ID:', item.id)
+          console.log('  Product:', item.product_name)
+          console.log('  Quantity:', quantityNumber)
+          console.log('  priceFromBackend:', priceNumber)
+          console.log('  subtotalFromBackend:', item.subtotal)
+          console.log('  calculatedSubtotal:', subtotalNumber)
+          console.log('  calculatedUnitPrice:', unitPrice)
+          console.log('  finalTotal (unitPrice * quantity):', unitPrice * quantityNumber)
+          console.log('---')
 
           return {
             id: index + 1,
@@ -101,10 +144,12 @@ const SellerDashboard = () => {
                 id: item.product,
                 name: item.product_name || `Sản phẩm #${item.product}`,
                 quantity: quantityNumber,
-                price: priceNumber,
+                // Lưu đơn giá (tính từ tổng tiền / số lượng) để hiển thị bên cạnh x10
+                price: unitPrice,
               },
             ],
-            total: subtotalNumber,
+            // Tổng tiền = đơn giá × số lượng (để đảm bảo tính toán đúng)
+            total: unitPrice * quantityNumber,
           }
         })
 
@@ -141,10 +186,44 @@ const SellerDashboard = () => {
 
         const quantityNumber = item.quantity ?? 0
         const priceNumber = Number.parseFloat(item.price) || 0
-        const subtotalNumber =
-          item.subtotal !== undefined && item.subtotal !== null
-            ? Number.parseFloat(item.subtotal)
-            : priceNumber * quantityNumber
+        const subtotalFromBackend = item.subtotal !== undefined && item.subtotal !== null
+          ? Number.parseFloat(item.subtotal)
+          : null
+        
+        // Ưu tiên dùng price từ backend (đã là tổng tiền dòng)
+        // Chỉ dùng subtotal nếu nó hợp lý (không quá lớn so với price)
+        // Tránh trường hợp subtotal bị nhân 2 lần từ đơn hàng cũ
+        let subtotalNumber = priceNumber // Mặc định dùng price
+        if (subtotalFromBackend !== null) {
+          // Nếu subtotal gần bằng price (sai số < 10%), thì dùng subtotal
+          // Nếu subtotal lớn hơn price nhiều (có thể bị nhân 2 lần), thì dùng price
+          const diff = Math.abs(subtotalFromBackend - priceNumber) / priceNumber
+          if (diff < 0.1) {
+            subtotalNumber = subtotalFromBackend
+          } else {
+            // subtotal có vẻ sai, dùng price thay thế
+            console.warn('[Order Mapping] subtotal seems incorrect, using price instead', {
+              price: priceNumber,
+              subtotal: subtotalFromBackend,
+              diff: diff
+            })
+            subtotalNumber = priceNumber
+          }
+        }
+
+        // Tính đơn giá từ tổng tiền
+        const unitPrice = quantityNumber > 0 ? subtotalNumber / quantityNumber : 0
+
+        // Debug log - in từng giá trị riêng để dễ đọc
+        console.log('[Order Mapping - reloadOrders] Item ID:', item.id)
+        console.log('  Product:', item.product_name)
+        console.log('  Quantity:', quantityNumber)
+        console.log('  priceFromBackend:', priceNumber)
+        console.log('  subtotalFromBackend:', item.subtotal)
+        console.log('  calculatedSubtotal:', subtotalNumber)
+        console.log('  calculatedUnitPrice:', unitPrice)
+        console.log('  finalTotal (unitPrice * quantity):', unitPrice * quantityNumber)
+        console.log('---')
 
         return {
           id: index + 1,
@@ -160,10 +239,12 @@ const SellerDashboard = () => {
               id: item.product,
               name: item.product_name || `Sản phẩm #${item.product}`,
               quantity: quantityNumber,
-              price: priceNumber,
+              // Lưu đơn giá (tính từ tổng tiền / số lượng) để hiển thị bên cạnh x10
+              price: unitPrice,
             },
           ],
-          total: subtotalNumber,
+          // Tổng tiền = đơn giá × số lượng (để đảm bảo tính toán đúng)
+          total: unitPrice * quantityNumber,
         }
       })
 

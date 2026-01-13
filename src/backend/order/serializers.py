@@ -84,7 +84,7 @@ class NewOrderSerializer(serializers.ModelSerializer):
             variant = item.get("variant")
             quantity = item["quantity"]
             shop = product.shop
-            unit_price = 0
+            base_unit_price = 0
 
             # --- Logic xử lý kho và giá ---
             if variant:
@@ -95,7 +95,7 @@ class NewOrderSerializer(serializers.ModelSerializer):
                 if variant.quantity < quantity:
                     raise serializers.ValidationError(f"Phân loại '{variant.id}' không đủ hàng.")
                 
-                unit_price = variant.price
+                base_unit_price = variant.price
                 variant.quantity -= quantity
                 variant.save()
             else:
@@ -103,19 +103,24 @@ class NewOrderSerializer(serializers.ModelSerializer):
                 if getattr(product, 'quantity', 0) < quantity:
                      raise serializers.ValidationError(f"Sản phẩm '{product.product_name}' không đủ hàng.")
                 
-                unit_price = product.base_price
+                base_unit_price = product.base_price
                 product.quantity -= quantity
                 product.save()
             # -----------------------------------------------------------
 
-            unit_price = variant.price if variant else product.base_price
+            # Tính đơn giá sau giảm giá và tổng tiền cho dòng này
             discount_percent = product.discount if product.discount else 0
             discount_factor = Decimal(1) - (Decimal(discount_percent) / Decimal(100))
-            print(discount_factor)
-            line_total_price = (unit_price * quantity) * discount_factor
+
+            # Đơn giá sau giảm (per unit)
+            discounted_unit_price = (Decimal(base_unit_price) * discount_factor).quantize(Decimal('0.01'))
+
+            # Tổng tiền cho dòng (đã nhân số lượng)
+            line_total_price = discounted_unit_price * quantity
             total_order_price += line_total_price
 
             # Tạo OrderDetail
+            # LƯU Ý: Lưu price = tổng tiền dòng (line_total_price) để tương thích với frontend hiện tại
             OrderDetail.objects.create(
                 order=order,
                 product=product,
@@ -190,7 +195,12 @@ class ShopOrderDetailSerializer(serializers.ModelSerializer):
     
     @extend_schema_field(OpenApiTypes.DECIMAL)
     def get_subtotal(self, obj):
-        return obj.quantity * obj.price
+        """
+        Tính subtotal cho order detail.
+        Backend luôn lưu price = tổng tiền dòng (line_total_price = quantity * discounted_unit_price),
+        nên chỉ cần trả về obj.price trực tiếp.
+        """
+        return obj.price
 
 
 class OrderItemSerializer(serializers.ModelSerializer):

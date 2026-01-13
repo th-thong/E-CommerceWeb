@@ -202,7 +202,7 @@ const OrderManagement = ({ filterStatus, orders = [], setOrders, onOrdersUpdate 
                           <span className="item-name">{item.name}</span>
                           <span className="item-quantity">x{item.quantity}</span>
                           <span className="item-price">
-                            {(item.price * item.quantity).toLocaleString()}₫
+                            {item.price.toLocaleString()}₫
                           </span>
                         </li>
                       ))}
