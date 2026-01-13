@@ -284,6 +284,15 @@ export const CartProvider = ({ children }) => {
   // Xóa toàn bộ giỏ hàng
   const clearCart = () => {
     setCartItems([]);
+    try {
+      const storageKey = getStorageKey();
+      localStorage.removeItem(storageKey);
+      // Cũng xóa guest cart để tránh giữ lại dữ liệu cũ
+      localStorage.removeItem('cart_guest');
+      console.log('[Cart] Cleared cart storage for key:', storageKey);
+    } catch (error) {
+      console.error('[Cart] Error clearing cart storage:', error);
+    }
   };
 
   // Tính tổng tiền
