@@ -5,8 +5,6 @@ import AuthModal from "@/components/Common/AuthModal/AuthModal";
 import { getProfile } from "@/api/auth";
 import Cart from "@/components/Cart/Cart";
 import { useCart } from "@/contexts/CartContext";
-import NotificationBell from "@/components/Common/NotificationBell/NotificationBell";
-import { useNotificationHelpers } from "@/hooks/useNotificationHelpers";
 
 const TOKEN_KEY = "auth_tokens";
 const CART_KEY_PREFIX = 'cart_';
@@ -29,7 +27,6 @@ const Navbar = () => {
   const [profile, setProfile] = useState(null);
   const [profileError, setProfileError] = useState(null);
   const prevProfileRef = useRef(null);
-  const { notifySellerApproved } = useNotificationHelpers();
 
   // Kiểm tra query param để mở modal đăng nhập
   useEffect(() => {
@@ -57,39 +54,39 @@ const Navbar = () => {
       if (!tokens?.access) return;
       try {
         const data = await getProfile(tokens.access);
-        console.log('[Navbar] Profile fetched, user_id:', data.user_id);
-        
-        // Kiểm tra nếu seller được duyệt (status chuyển từ pending -> active và có role Seller)
-        const prevProfile = prevProfileRef.current;
-        if (prevProfile && prevProfile.status === 'pending' && data.status === 'active' && data.role === 'Seller') {
-          notifySellerApproved();
-        }
+        console.log('[Navbar] Profile fetched, user_id:', data.user_id, 'status:', data.status, 'role:', data.role);
         
         setProfile(data);
         prevProfileRef.current = data;
         setProfileError(null);
         
-        // Lưu user_id vào tokens để dùng cho giỏ hàng (chỉ khi chưa có hoặc thay đổi)
-        if (data.user_id && (!tokens.user_id || tokens.user_id !== data.user_id)) {
-          const updatedTokens = { ...tokens, user_id: data.user_id };
-          setTokens(updatedTokens);
-          localStorage.setItem(TOKEN_KEY, JSON.stringify(updatedTokens));
-          console.log('[Navbar] User ID saved to tokens:', data.user_id);
-          
-          // Dispatch custom event để CartContext biết auth đã thay đổi
-          window.dispatchEvent(new Event('authTokensChanged'));
-          
-          // Đợi một chút để đảm bảo localStorage đã được cập nhật
-          setTimeout(() => {
-            reloadCartFromStorage();
-          }, 200);
-        }
+            // Lưu user_id vào tokens để dùng cho giỏ hàng (chỉ khi chưa có hoặc thay đổi)
+            if (data.user_id && (!tokens.user_id || tokens.user_id !== data.user_id)) {
+              const updatedTokens = { ...tokens, user_id: data.user_id };
+              setTokens(updatedTokens);
+              localStorage.setItem(TOKEN_KEY, JSON.stringify(updatedTokens));
+              console.log('[Navbar] User ID saved to tokens:', data.user_id);
+              
+              // Đợi một chút để đảm bảo localStorage đã được cập nhật
+              setTimeout(() => {
+                reloadCartFromStorage();
+              }, 200);
+            }
       } catch (err) {
         console.error('[Navbar] Error fetching profile:', err);
         setProfileError("Không lấy được thông tin user");
       }
     };
     fetchProfile();
+    
+    // Polling để check seller approval định kỳ (mỗi 60 giây - giảm tần suất để tránh spam)
+    if (tokens?.access) {
+      const interval = setInterval(() => {
+        fetchProfile();
+      }, 60000); // 60 giây (tăng từ 30 giây)
+      
+      return () => clearInterval(interval);
+    }
   }, [tokens?.access]); // Chỉ chạy khi access token thay đổi
 
   // Đồng bộ searchQuery với URL params
@@ -307,7 +304,6 @@ const Navbar = () => {
           <div className="navbar-right">
             {tokens ? (
               <>
-                {tokens && <NotificationBell />}
                 <div className="navbar-user-wrapper">
                   <div className="navbar-user">
                     <div className="navbar-avatar">
