@@ -100,9 +100,11 @@ def get_trendy_product(request):
     last_week = timezone.now() - timedelta(days=7)
 
     # 2. Truy vấn - chỉ lấy sản phẩm đã được duyệt
+    # Tính total_sold từ các đơn hàng đã giao thành công (shipped) trong 7 ngày qua
     trendy_products = Product.objects.filter(
         is_active=True,
-        order_details__order__created_at__gte=last_week 
+        order_details__order__created_at__gte=last_week,
+        order_details__order_status='shipped'
     ).annotate(
         total_sold=Sum('order_details__quantity') 
     ).order_by('-total_sold')[:10]
