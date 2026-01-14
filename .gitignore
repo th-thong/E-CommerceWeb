@@ -1,22 +1,23 @@
-# Bí mật
+# Secret
 *.env
 .vite
+.secrets
+
+
+# Env
+venv
+.venv
 node_modules
-# File tạm
+
+# Temp file
 temp
 *.log
 __pycache__
-
-# Môi trường
-venv
-.venv
-.secrets
-
-# Floder riêng
-thong_note
-
-# test workflow
-act.exe
-
 temp_img
+
+
+# DB
 postgres_data
+
+# Local file
+local
